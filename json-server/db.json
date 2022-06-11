@@ -1,0 +1,51 @@
+{
+  "users": [
+    {
+      "username": "Gay",
+      "password": "Boy",
+      "id": 1
+    },
+    {
+      "username": "Killua",
+      "password": "Zoldrik",
+      "id": 2
+    },
+    {
+      "username": "Xristina",
+      "password": "Papavasilopoulou",
+      "id": 3
+    },
+    {
+      "username": "George",
+      "password": "Loukovitis",
+      "id": 4
+    },
+    {
+      "username": "Gay",
+      "password": "Boy",
+      "id": 5
+    },
+    {
+      "username": "Killua",
+      "password": "Zoldrick",
+      "id": 6
+    }
+  ],
+  "projects": [
+    {
+      "title": "Project 1",
+      "ownerId": 2,
+      "id": 1
+    },
+    {
+      "title": "Project 2",
+      "ownerId": 2,
+      "id": 2
+    },
+    {
+      "title": "Project 3",
+      "ownerId": 2,
+      "id": 3
+    }
+  ]
+}
