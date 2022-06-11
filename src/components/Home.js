@@ -1,4 +1,5 @@
 import {React, useState} from 'react'
+import { Link } from "react-router-dom";
 import AddProject from './AddProject'
 import MyAppBar from './MyAppBar'
 import ProjectList from './ProjectList'
@@ -26,7 +27,9 @@ const Home = ({logoutFun, user}) => {
           {"Poutsa"}
         </Drawer>
         <ProjectList user = {user}></ProjectList>
-        <Button variant="contained" startIcon={<AddIcon />}>Create Project</Button>
+        <Link to="/create-project">
+          <Button variant="contained" startIcon={<AddIcon />}>Create Project</Button>
+        </Link>
       </Container>
     </div>
   )

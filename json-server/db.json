@@ -29,6 +29,11 @@
       "username": "Killua",
       "password": "Zoldrick",
       "id": 6
+    },
+    {
+      "username": "George",
+      "password": "Loukobitis",
+      "id": 7
     }
   ],
   "projects": [

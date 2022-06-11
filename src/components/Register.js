@@ -1,43 +1,90 @@
-import React, {useState} from 'react'
-import login from '../utilities/LoginService';
+import React, { useState } from 'react'
+import {register} from '../utilities/LoginService';
+
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
+import TextField from '@mui/material/TextField';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import Link from '@mui/material/Link';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+
+const theme = createTheme();
 
 const Register = ({loginFun, switchToLogin}) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    register(data.get("username"), data.get("password"), loginFun);
+  };
 
-  const formHandler = (e) => {
-    e.preventDefault();
-    
-    fetch("http://localhost:8000/users",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({username, password})
-    })
-    .then((res)=>{
-      if(res.ok)
-      {
-        login(username, password,loginFun)
-      }
-    })
-  }
   return (
-    <div>
-      <h1>Register</h1>
-      <form onSubmit={formHandler}>
-        <label htmlFor="username">Username: </label>
-        <input required name='username' type="text" value={username} onChange={(input)=>{setUsername(input.target.value)}} />
-        <br />
-        <label htmlFor="password">Password:  </label>
-        <input required name='password' type="password" value={password} onChange={(input)=>{setPassword(input.target.value)}} />
-        <button>Register</button>
-      </form>
-      <button onClick={switchToLogin}>Login</button>
-    </div>
-  )
+    <ThemeProvider theme={theme}>
+      <Container component="main" maxWidth="xs">
+        <CssBaseline />
+        <Box
+          sx={{
+            marginTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+            <LockOutlinedIcon />
+          </Avatar>
+          <Typography component="h1" variant="h5">
+            Register
+          </Typography>
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="username"
+              label="Username"
+              name="username"
+              autoComplete="username"
+              autoFocus
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Register
+            </Button>
+            <Grid container justifyContent="end">
+              <Grid item>
+                <Link onClick={switchToLogin} variant="body2">
+                  {"Already have an account? Sign In"}
+                </Link>
+              </Grid>
+            </Grid>
+          </Box>
+        </Box>
+      </Container>
+    </ThemeProvider>
+  );
 }
 
 export default Register
