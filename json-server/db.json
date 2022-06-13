@@ -40,17 +40,38 @@
     {
       "title": "Project 1",
       "ownerId": 2,
-      "id": 1
+      "id": 1,
+      "creator": "MegaGeorge",
+      "date": "Tuesday, 21/1/2000",
+      "milestones":[
+        {"title":"Wake up", "completed":true},
+        {"title": "Get your weapon", "completed":false}, 
+        {"title": "Kill", "completed":true}
+      ]
     },
     {
       "title": "Project 2",
       "ownerId": 2,
-      "id": 2
+      "id": 2,
+      "creator": "MegaGeorge",
+      "date": "Tuesday, 21/1/2000",
+      "milestones":[
+        {"title":"Wake up", "completed":true},
+        {"title": "Get your weapon", "completed":false}, 
+        {"title": "Kill", "completed":true}
+      ]
     },
     {
       "title": "Project 3",
       "ownerId": 2,
-      "id": 3
+      "id": 3,
+      "creator": "MegaGeorge",
+      "date": "Tuesday, 21/1/2000",
+      "milestones":[
+        {"title":"Wake up", "completed":true},
+        {"title": "Get your weapon", "completed":false}, 
+        {"title": "Kill", "completed":true}
+      ]
     }
   ]
 }

@@ -3,6 +3,7 @@ import { BrowserRouter,Routes, Route, Switch } from "react-router-dom";
 import Home from './components/Home';
 import Login from './components/Login';
 import NewProjectForm from './components/NewProjectForm';
+import ProjectScreen from './components/ProjectScreen';
 import Register from './components/Register';
 import UserInfo from './components/UserInfo';
 
@@ -48,6 +49,9 @@ const App = () => {
         }/>
         <Route exact path="/create-project" element={
           <NewProjectForm></NewProjectForm>
+        }/>
+        <Route exact path="/projects/:projectId" element={
+          <ProjectScreen logoutFun={logout} user = {user}></ProjectScreen>
         }/>
       </Routes>
     </BrowserRouter>

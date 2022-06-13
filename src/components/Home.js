@@ -7,6 +7,8 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
+import { CssBaseline } from '@mui/material';
+import SideMenu from './SideMenu';
 
 const Home = ({logoutFun, user}) => {
 
@@ -17,6 +19,7 @@ const Home = ({logoutFun, user}) => {
 
   return (
     <div>
+      <CssBaseline></CssBaseline>
       <MyAppBar logoutFun={logoutFun} toggleDrawer={toggleDrawer}></MyAppBar>
       <Container maxWidth="sm">
         <Drawer
@@ -24,7 +27,7 @@ const Home = ({logoutFun, user}) => {
           open={isDrawerOpen}
           onClose={toggleDrawer}
         >
-          {"Poutsa"}
+          <SideMenu></SideMenu>
         </Drawer>
         <ProjectList user = {user}></ProjectList>
         <Link to="/create-project">
