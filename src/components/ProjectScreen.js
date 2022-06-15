@@ -80,18 +80,18 @@ const ProjectScreen = ({logoutFun, user}) => {
                   <Divider></Divider>
                   <Stack direction="row" spacing={1}>
                     <Typography>creator:</Typography>
-                    <Typography>{project.creator}</Typography>
+                    <Typography>{project.creator.username}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={1}>
                     <Typography>date:</Typography>
-                    <Typography>{project.date}</Typography>
+                    <Typography>{Date(project.date)}</Typography>
                   </Stack>
                 </CardContent>
               </Card>
             </Stack>
             <List>
               {project.milestones.map((milestone)=>(
-                <ListItem divider={true} key={milestone.title} secondaryAction={
+                <ListItem divider={true} key={milestone.name} secondaryAction={
                   <Checkbox
                     edge="end"
                     checked={milestone.completed}
@@ -100,7 +100,7 @@ const ProjectScreen = ({logoutFun, user}) => {
                   <ListItemIcon>
                     <AssignmentLateIcon color='yellow'></AssignmentLateIcon>
                   </ListItemIcon>
-                  <ListItemText>{milestone.title}</ListItemText>
+                  <ListItemText primary = {milestone.name}></ListItemText>
                 </ListItem>
               ))}
             </List>

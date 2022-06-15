@@ -39,39 +39,46 @@
   "projects": [
     {
       "title": "Project 1",
-      "ownerId": 2,
-      "id": 1,
-      "creator": "MegaGeorge",
-      "date": "Tuesday, 21/1/2000",
-      "milestones":[
-        {"title":"Wake up", "completed":true},
-        {"title": "Get your weapon", "completed":false}, 
-        {"title": "Kill", "completed":true}
-      ]
-    },
-    {
-      "title": "Project 2",
-      "ownerId": 2,
-      "id": 2,
-      "creator": "MegaGeorge",
-      "date": "Tuesday, 21/1/2000",
-      "milestones":[
-        {"title":"Wake up", "completed":true},
-        {"title": "Get your weapon", "completed":false}, 
-        {"title": "Kill", "completed":true}
-      ]
-    },
-    {
-      "title": "Project 3",
-      "ownerId": 2,
-      "id": 3,
-      "creator": "MegaGeorge",
-      "date": "Tuesday, 21/1/2000",
-      "milestones":[
-        {"title":"Wake up", "completed":true},
-        {"title": "Get your weapon", "completed":false}, 
-        {"title": "Kill", "completed":true}
-      ]
+      "admins": [
+        {
+          "username": "Killua",
+          "password": "Zoldrik",
+          "id": 2
+        },
+        {
+          "username": "George",
+          "password": "Loukobitis",
+          "id": 7
+        }
+      ],
+      "milestones": [
+        {
+          "name": "Wake up",
+          "required": true,
+          "prerequisites": []
+        },
+        {
+          "name": "Make your bed",
+          "required": false,
+          "prerequisites": [
+            "Wake up"
+          ]
+        },
+        {
+          "name": "Kill your self",
+          "required": true,
+          "prerequisites": [
+            "Wake up"
+          ]
+        }
+      ],
+      "creator": {
+        "username": "Killua",
+        "password": "Zoldrik",
+        "id": 2
+      },
+      "date": 1655301634977,
+      "id": 1
     }
   ]
 }

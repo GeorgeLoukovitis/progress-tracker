@@ -1,5 +1,5 @@
 import {React, useState} from 'react'
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AddProject from './AddProject'
 import MyAppBar from './MyAppBar'
 import ProjectList from './ProjectList'
@@ -16,6 +16,8 @@ const Home = ({logoutFun, user}) => {
   const toggleDrawer = ()=>{
     setDrawer(!isDrawerOpen)
   }
+
+  const navigate = useNavigate()
 
   return (
     <div>

@@ -15,7 +15,8 @@ const ProjectList = ({user}) => {
     fetch("http://localhost:8000/projects")
     .then((res)=>res.json())
     .then((data)=>{
-      let projectFilter = data.filter((project)=>(project.ownerId === user.id))
+      // let projectFilter = data.filter((project)=>(project.ownerId === user.id))
+      let projectFilter = data
       console.log(projectFilter)
       if(projectFilter.length !== 0)
       {

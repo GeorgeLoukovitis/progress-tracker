@@ -48,7 +48,7 @@ const App = () => {
           )
         }/>
         <Route exact path="/create-project" element={
-          <NewProjectForm></NewProjectForm>
+          <NewProjectForm logoutFun={logout} user = {user}></NewProjectForm>
         }/>
         <Route exact path="/projects/:projectId" element={
           <ProjectScreen logoutFun={logout} user = {user}></ProjectScreen>
