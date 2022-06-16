@@ -1,6 +1,5 @@
 import {React, useState} from 'react'
 import { Link, useNavigate } from "react-router-dom";
-import AddProject from './AddProject'
 import MyAppBar from './MyAppBar'
 import ProjectList from './ProjectList'
 import Button from '@mui/material/Button';
@@ -22,7 +21,7 @@ const Home = ({logoutFun, user}) => {
   return (
     <div>
       <CssBaseline></CssBaseline>
-      <MyAppBar logoutFun={logoutFun} toggleDrawer={toggleDrawer}></MyAppBar>
+      <MyAppBar title="Enrolled Projects" logoutFun={logoutFun} toggleDrawer={toggleDrawer}></MyAppBar>
       <Container maxWidth="sm">
         <Drawer
           anchor={"left"}
@@ -32,9 +31,9 @@ const Home = ({logoutFun, user}) => {
           <SideMenu></SideMenu>
         </Drawer>
         <ProjectList user = {user}></ProjectList>
-        <Link to="/create-project">
-          <Button variant="contained" startIcon={<AddIcon />}>Create Project</Button>
-        </Link>
+        
+        <Button onClick={()=>navigate("/all-projects")} variant="contained" startIcon={<AddIcon />}>EnrolL</Button>
+        
       </Container>
     </div>
   )

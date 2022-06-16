@@ -3,37 +3,46 @@
     {
       "username": "Gay",
       "password": "Boy",
-      "id": 1
+      "id": 1,
+      "projectsEnrolled": []
     },
     {
       "username": "Killua",
       "password": "Zoldrik",
-      "id": 2
+      "id": 2,
+      "projectsEnrolled": [
+        1
+      ]
     },
     {
       "username": "Xristina",
       "password": "Papavasilopoulou",
-      "id": 3
+      "id": 3,
+      "projectsEnrolled": []
     },
     {
       "username": "George",
       "password": "Loukovitis",
-      "id": 4
+      "id": 4,
+      "projectsEnrolled": []
     },
     {
       "username": "Gay",
       "password": "Boy",
-      "id": 5
+      "id": 5,
+      "projectsEnrolled": []
     },
     {
       "username": "Killua",
       "password": "Zoldrick",
-      "id": 6
+      "id": 6,
+      "projectsEnrolled": []
     },
     {
       "username": "George",
       "password": "Loukobitis",
-      "id": 7
+      "id": 7,
+      "projectsEnrolled": []
     }
   ],
   "projects": [
