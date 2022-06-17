@@ -1,5 +1,5 @@
 import  {React, useState, useEffect } from 'react'
-import { BrowserRouter,Routes, Route, Switch } from "react-router-dom";
+import { BrowserRouter,Routes, Route, Switch, useNavigate } from "react-router-dom";
 import AllProjects from './components/AllProjects';
 import AwardMilestones from './components/AwardMilestones';
 import Home from './components/Home';
@@ -58,7 +58,7 @@ const App = () => {
           <MyProjects logoutFun={logout} user = {user}></MyProjects>
         }/>
         <Route exact path="/all-projects" element={
-          <AllProjects logoutFun={logout} user = {user}></AllProjects>
+          <AllProjects logoutFun={logout} user = {user} setUser={setUser}></AllProjects>
         }/>
         <Route exact path="/manage-projects/:projectId" element={
           <ManageProject logoutFun={logout} user = {user}></ManageProject>

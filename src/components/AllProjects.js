@@ -9,7 +9,7 @@ import AddIcon from '@mui/icons-material/Add';
 import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
 import SideMenu from './SideMenu';
 
-const AllProjects = ({logoutFun, user}) => {
+const AllProjects = ({logoutFun, user, setUser}) => {
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
@@ -32,7 +32,7 @@ const AllProjects = ({logoutFun, user}) => {
   },[])
 
   const enrollToProject = (project)=>{
-    user.projectsEnrolled.push(project.id)
+    user.projectsEnrolled.push({id:project.id, milestonesAchieved:[]})
     fetch("http://localhost:8000/users/"+user.id,
     {
       method: "PUT",
@@ -49,7 +49,12 @@ const AllProjects = ({logoutFun, user}) => {
     })
     .then((data)=>{
       console.log(data)
+      setUser(data)
     })
+  }
+
+  const hasEnrolled = (usr, projectId) => {
+    return usr.projectsEnrolled.map(p=>p.id).includes(projectId)
   }
 
   return (
@@ -85,10 +90,10 @@ const AllProjects = ({logoutFun, user}) => {
             }>
               {
                 projects.filter((project)=>(project.title.includes(searchTerm))).map((project)=>(
-                  <ListItem secondaryAction={(
+                  <ListItem key={project.id} secondaryAction={(
                     <Stack direction="row" spacing={1}>
                       <Button variant="outlined">Details</Button>
-                      <Button variant={(project.id in user.projectsEnrolled)?"contained":"outlined"} color='success' onClick={()=>{enrollToProject(project)}}>Enroll</Button>
+                      <Button variant={(hasEnrolled(user, project.id))?"contained":"outlined"} color='success' disabled={hasEnrolled(user,project.id)} onClick={()=>{enrollToProject(project)}}>{(hasEnrolled(user,project.id))?"Enrolled":"Enroll"}</Button>
                     </Stack>
                   )}>
                     <ListItemText primary={project.title}></ListItemText>
@@ -97,7 +102,7 @@ const AllProjects = ({logoutFun, user}) => {
               }
             </List>
             
-            <Button onClick={()=>{navigate("/create-project")}} variant="contained">Back</Button>
+            <Button onClick={()=>{navigate("/")}} variant="contained">Back</Button>
           </CardContent>
           
         </Card>

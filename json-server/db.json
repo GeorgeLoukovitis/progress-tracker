@@ -10,15 +10,24 @@
       "username": "Killua",
       "password": "Zoldrik",
       "id": 2,
-      "projectsEnrolled": [
-        1
-      ]
+      "projectsEnrolled": []
     },
     {
       "username": "Xristina",
       "password": "Papavasilopoulou",
       "id": 3,
-      "projectsEnrolled": []
+      "projectsEnrolled": [
+        {
+          "id": 1,
+          "milestonesAchieved": [
+            "Wake up",
+            "Wake up",
+            "Wake up",
+            "Wake up",
+            "Wake up"
+          ]
+        }
+      ]
     },
     {
       "username": "George",
@@ -47,17 +56,13 @@
   ],
   "projects": [
     {
-      "title": "Project 1",
+      "title": "Hello",
       "admins": [
         {
           "username": "Killua",
           "password": "Zoldrik",
-          "id": 2
-        },
-        {
-          "username": "George",
-          "password": "Loukobitis",
-          "id": 7
+          "id": 2,
+          "projectsEnrolled": []
         }
       ],
       "milestones": [
@@ -67,15 +72,8 @@
           "prerequisites": []
         },
         {
-          "name": "Make your bed",
+          "name": "Kill yourself",
           "required": false,
-          "prerequisites": [
-            "Wake up"
-          ]
-        },
-        {
-          "name": "Kill your self",
-          "required": true,
           "prerequisites": [
             "Wake up"
           ]
@@ -84,9 +82,10 @@
       "creator": {
         "username": "Killua",
         "password": "Zoldrik",
-        "id": 2
+        "id": 2,
+        "projectsEnrolled": []
       },
-      "date": 1655301634977,
+      "date": 1655500908267,
       "id": 1
     }
   ]
