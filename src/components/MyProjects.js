@@ -57,7 +57,7 @@ const MyProjects = ({logoutFun, user}) => {
                 projects.map((project)=>(
                   <ListItem secondaryAction={(
                     <Stack direction="row">
-                      <Button>Edit</Button>
+                      <Button onClick={()=>{navigate("/award-milestones/"+project.id)}}>Award Milestones</Button>
                       <Button onClick={()=>{navigate("/manage-projects/"+project.id)}}>Manage</Button>
                     </Stack>
                   )}>
