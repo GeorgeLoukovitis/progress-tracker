@@ -1,29 +1,26 @@
 import {React, useState, useEffect} from 'react'
-import { Link, useNavigate } from "react-router-dom";
+import {useNavigate } from "react-router-dom";
 import MyAppBar from './MyAppBar'
-import ProjectList from './ProjectList'
 import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
 import Drawer from '@mui/material/Drawer';
-import AddIcon from '@mui/icons-material/Add';
 import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
 import SideMenu from './SideMenu';
 import { enrollToProject, isEnrolled } from '../utilities/ProjectService';
-import { getUser, setUser, refresh} from '../utilities/LoginService';
+import { getUser, refresh} from '../utilities/LoginService';
 
-const AllProjects = ({logoutFun}) => {
+const AllProjects = () => {
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
     setDrawer(!isDrawerOpen)
   }
   const navigate = useNavigate()
-  refresh()
   const [user, setLocalUser] = useState(getUser())
   const [searchTerm, setSearchTerm] = useState("")
   const [projects, setProjects] = useState([]);
 
   useEffect(()=>{
+    refresh(setLocalUser)
     fetch("http://localhost:8000/projects")
     .then((res)=>res.json())
     .then((data)=>{
@@ -37,7 +34,7 @@ const AllProjects = ({logoutFun}) => {
   return (
     <div>
       <CssBaseline></CssBaseline>
-      <MyAppBar title="Select Project" logoutFun={logoutFun} toggleDrawer={toggleDrawer}></MyAppBar>
+      <MyAppBar title="Select Project" toggleDrawer={toggleDrawer}></MyAppBar>
       <Drawer
         anchor={"left"}
         open={isDrawerOpen}

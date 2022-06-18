@@ -16,7 +16,6 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
         }
       })
       .then((data)=>{
-        // console.log(data)
         setProject(data)
       })
   },[])
@@ -255,10 +254,7 @@ const AwardMilestones = () => {
       awardUsers()
       return (<SuccessScreen></SuccessScreen>)
     }
-
   }
-  
-  
 
   return (
     <div>

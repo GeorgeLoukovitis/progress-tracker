@@ -9,32 +9,22 @@ import MyProjects from './components/MyProjects';
 import NewProjectForm from './components/NewProjectForm';
 import ProjectScreen from './components/ProjectScreen';
 import Register from './components/Register';
-import UserInfo from './components/UserInfo';
-
+import { refresh } from './utilities/LoginService';
 
 const App = () => {
 
-  const [user, setUser] = useState(null)
-  const loginUser = (usr) =>
-  {
-    setUser(usr)
-  }
-  const logout = () => 
-  {
-    setUser(null)
-    localStorage.removeItem("user")
-  }
+  console.log("Created App")
+
+  const [user, setLocalUser] = useState(null)
   const [registerScreen, setRegisterScreen] = useState(false)
+  
   const switchLoginRegister = () =>
   {
     setRegisterScreen(registerScreen=>!registerScreen)
   }
 
   useEffect(()=>{
-    if(localStorage.getItem("user")!==null)
-    {      
-      setUser(JSON.parse(localStorage.getItem("user")))
-    }
+    refresh(setLocalUser)
   },[])
 
   
@@ -44,30 +34,30 @@ const App = () => {
       <Routes>
         <Route path="/" element={
           (user)?
-          <Home logoutFun={logout} user = {user}></Home>:
+          <Home></Home>:
           (
             (registerScreen)?
-            <Register loginFun={loginUser} switchToLogin={switchLoginRegister}></Register>:
-            <Login loginFun={loginUser} switchToRegister={switchLoginRegister}></Login>
+            <Register loginFun={setLocalUser} switchToLogin={switchLoginRegister}></Register>:
+            <Login loginFun={setLocalUser} switchToRegister={switchLoginRegister}></Login>
           )
         }/>
         <Route exact path="/create-project" element={
-          <NewProjectForm logoutFun={logout} user = {user}></NewProjectForm>
+          <NewProjectForm></NewProjectForm>
         }/>
         <Route exact path="/manage-projects" element={
-          <MyProjects logoutFun={logout} user = {user}></MyProjects>
+          <MyProjects></MyProjects>
         }/>
         <Route exact path="/all-projects" element={
-          <AllProjects logoutFun={logout} user = {user} setUser={setUser}></AllProjects>
+          <AllProjects></AllProjects>
         }/>
         <Route exact path="/manage-projects/:projectId" element={
-          <ManageProject logoutFun={logout} user = {user}></ManageProject>
+          <ManageProject></ManageProject>
         }/>
         <Route exact path="/projects/:projectId" element={
-          <ProjectScreen logoutFun={logout} user = {user}></ProjectScreen>
+          <ProjectScreen></ProjectScreen>
         }/>
         <Route exact path="/award-milestones/:projectId" element={
-          <AwardMilestones logoutFun={logout} user = {user}></AwardMilestones>
+          <AwardMilestones></AwardMilestones>
         }/>
       </Routes>
     </BrowserRouter>

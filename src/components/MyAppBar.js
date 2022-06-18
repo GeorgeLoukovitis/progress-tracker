@@ -6,8 +6,13 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '../utilities/LoginService';
 
-const MyAppBar = ({logoutFun, toggleDrawer, title}) => {
+const MyAppBar = ({toggleDrawer, title}) => {
+
+  const navigate = useNavigate()
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
@@ -25,7 +30,13 @@ const MyAppBar = ({logoutFun, toggleDrawer, title}) => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
-          <Button color="inherit" onClick={()=>{logoutFun();}}>Logout</Button>
+          <Button color="inherit" onClick={()=>{
+            logout()
+            navigate("/")
+            window.location.reload(false);
+          }}>
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
     </Box>

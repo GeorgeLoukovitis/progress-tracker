@@ -14,7 +14,7 @@ const SideMenu = () => {
     <List>
       {
         routes.map((route)=>(
-          <ListItem>
+          <ListItem key={route.name}>
               <ListItemButton onClick={()=>{navigate(route.route)}}>
                 <ListItemText primary={route.name}></ListItemText>
               </ListItemButton>

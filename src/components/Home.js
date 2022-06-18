@@ -1,25 +1,37 @@
-import {React, useState} from 'react'
+import {React, useState, useEffect} from 'react'
 import { Link, useNavigate } from "react-router-dom";
 import MyAppBar from './MyAppBar'
-import ProjectList from './ProjectList'
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
-import { CssBaseline } from '@mui/material';
+import { Box, Card, CardActions, CardContent, CssBaseline, List, ListItem, ListItemButton, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
 import SideMenu from './SideMenu';
-import {getUser} from "../utilities/LoginService"
+import {getUser, refresh} from "../utilities/LoginService"
 
 const Home = ({logoutFun}) => {
-
-  const user = getUser()
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
     setDrawer(!isDrawerOpen)
   }
-
+  
   const navigate = useNavigate()
+  const [user, setLocalUser] = useState(getUser())
+  const [projects, setProjects] = useState([]);
+  useEffect(()=>{
+    refresh(setLocalUser)
+    fetch("http://localhost:8000/projects")
+    .then((res)=>res.json())
+    .then((data)=>{
+      let projectFilter = data
+      console.log(projectFilter)
+      if(projectFilter.length !== 0)
+      {
+        setProjects(projectFilter)
+      }
+    })
+  },[])
 
   return (
     <div>
@@ -33,9 +45,35 @@ const Home = ({logoutFun}) => {
         >
           <SideMenu></SideMenu>
         </Drawer>
-        <ProjectList user = {user}></ProjectList>
+        <Box sx={{margin: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center', 
+        }}>
+          <Card sx={{width:500}}>
+            <CardContent>
+              <List subheader={
+                <ListSubheader>Enrolled Projects</ListSubheader>
+              }>
+                {projects.map((project)=>(
+                  <ListItem disablePadding key={project.id}>
+                    <ListItemButton onClick={()=>{
+                      navigate("/projects/"+project.id)
+                    }}>
+                      <ListItemText primary={project.title} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                
+              </List>
+              <Stack direction="row" justifyContent="flex-end">
+                <Button onClick={()=>navigate("/all-projects")} variant="contained" startIcon={<AddIcon />}>EnrolL</Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
         
-        <Button onClick={()=>navigate("/all-projects")} variant="contained" startIcon={<AddIcon />}>EnrolL</Button>
+        
         
       </Container>
     </div>

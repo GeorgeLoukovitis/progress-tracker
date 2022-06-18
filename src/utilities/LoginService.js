@@ -42,21 +42,25 @@ const setUser = (usr) => {
   localStorage.setItem("user", JSON.stringify(usr))
 }
 
-const refresh = () => {
-  const uid = JSON.parse(localStorage.getItem("user")).id
-  fetch("http://localhost:8000/users/"+uid)
-    .then((res)=>{
-      if(res.ok)
-      {
-        return res.json()
-      }
-    })
-    .then((data)=>{
-      setUser(data)
-    })
+const refresh = (updateState) => {
+  if(JSON.parse(localStorage.getItem("user")))
+  {
+    const uid = JSON.parse(localStorage.getItem("user")).id
+    fetch("http://localhost:8000/users/"+uid)
+      .then((res)=>{
+        if(res.ok)
+        {
+          return res.json()
+        }
+      })
+      .then((data)=>{
+        setUser(data)
+        updateState(data)
+      })
+  }
 
 }
 
 
 
-export {login, register, getUser, setUser, refresh}
+export {login, logout, register, getUser, setUser, refresh}

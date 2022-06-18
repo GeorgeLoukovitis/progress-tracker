@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import {Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, Divider, IconButton, List, ListItem, ListItemText,ListSubheader, Stack, TextField, Typography} from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import { getUser, refresh } from '../utilities/LoginService';
 
 const SetTitle = ({setProjectTitle, nextStage}) => {
 
@@ -376,7 +377,9 @@ const Preview = ({title, admins, milestones, previousStage, creator}) => {
 
 
 
-const NewProjectForm = ({user}) => {
+const NewProjectForm = () => {
+
+  const [user, setLocalUser] = useState(getUser())
   const [stage, setStage] = useState(0);
   const nextStage = ()=>{
     setStage(stage+1);
@@ -384,6 +387,10 @@ const NewProjectForm = ({user}) => {
   const previousStage = ()=>{
     setStage(stage-1);
   }
+
+  useEffect(()=>{
+    refresh(setLocalUser)
+  },[])
 
   const showForm = (s)=>{
     if(s === 0)

@@ -1,15 +1,14 @@
 import {React, useState, useEffect} from 'react'
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import MyAppBar from './MyAppBar'
-import ProjectList from './ProjectList'
 import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
 import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
 import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack } from '@mui/material';
 import SideMenu from './SideMenu';
+import { getUser, refresh } from '../utilities/LoginService';
 
-const MyProjects = ({logoutFun, user}) => {
+const MyProjects = () => {
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
@@ -17,25 +16,27 @@ const MyProjects = ({logoutFun, user}) => {
   }
   const navigate = useNavigate()
 
+  const [user, setLocalUser] = useState(getUser())
   const [projects, setProjects] = useState([]);
 
   useEffect(()=>{
+    refresh(setLocalUser)
     fetch("http://localhost:8000/projects")
-    .then((res)=>res.json())
-    .then((data)=>{
-      let projectFilter = data.filter((project)=>(project.admins.map(admin=>admin.id).includes(user.id)))
-      console.log(projectFilter)
-      if(projectFilter.length !== 0)
-      {
-        setProjects(projectFilter)
-      }
-    })
+      .then((res)=>res.json())
+      .then((data)=>{
+        let projectFilter = data.filter((project)=>(project.admins.map(admin=>admin.id).includes(user.id)))
+        console.log(projectFilter)
+        if(projectFilter.length !== 0)
+        {
+          setProjects(projectFilter)
+        }
+      })
   },[])
 
   return (
     <div>
       <CssBaseline></CssBaseline>
-      <MyAppBar title="My Projects" logoutFun={logoutFun} toggleDrawer={toggleDrawer}></MyAppBar>
+      <MyAppBar title="My Projects" toggleDrawer={toggleDrawer}></MyAppBar>
       <Drawer
         anchor={"left"}
         open={isDrawerOpen}
@@ -55,7 +56,7 @@ const MyProjects = ({logoutFun, user}) => {
             }>
               {
                 projects.map((project)=>(
-                  <ListItem secondaryAction={(
+                  <ListItem key={project.id} secondaryAction={(
                     <Stack direction="row">
                       <Button onClick={()=>{navigate("/award-milestones/"+project.id)}}>Award Milestones</Button>
                       <Button onClick={()=>{navigate("/manage-projects/"+project.id)}}>Manage</Button>
@@ -66,7 +67,6 @@ const MyProjects = ({logoutFun, user}) => {
                 ))
               }
             </List>
-            
             <Button onClick={()=>{navigate("/create-project")}} variant="contained" startIcon={<AddIcon />}>Create Project</Button>
           </CardContent>
           
