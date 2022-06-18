@@ -8,15 +8,18 @@ import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
 import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
 import SideMenu from './SideMenu';
+import { enrollToProject, isEnrolled } from '../utilities/ProjectService';
+import { getUser, setUser, refresh} from '../utilities/LoginService';
 
-const AllProjects = ({logoutFun, user, setUser}) => {
+const AllProjects = ({logoutFun}) => {
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
     setDrawer(!isDrawerOpen)
   }
   const navigate = useNavigate()
-
+  refresh()
+  const [user, setLocalUser] = useState(getUser())
   const [searchTerm, setSearchTerm] = useState("")
   const [projects, setProjects] = useState([]);
 
@@ -30,32 +33,6 @@ const AllProjects = ({logoutFun, user, setUser}) => {
       }
     })
   },[])
-
-  const enrollToProject = (project)=>{
-    user.projectsEnrolled.push({id:project.id, milestonesAchieved:[]})
-    fetch("http://localhost:8000/users/"+user.id,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(user)
-    })
-    .then((res)=>{
-      if(res.ok)
-      {
-        return res.json()
-      }
-    })
-    .then((data)=>{
-      console.log(data)
-      setUser(data)
-    })
-  }
-
-  const hasEnrolled = (usr, projectId) => {
-    return usr.projectsEnrolled.map(p=>p.id).includes(projectId)
-  }
 
   return (
     <div>
@@ -92,8 +69,8 @@ const AllProjects = ({logoutFun, user, setUser}) => {
                 projects.filter((project)=>(project.title.includes(searchTerm))).map((project)=>(
                   <ListItem key={project.id} secondaryAction={(
                     <Stack direction="row" spacing={1}>
-                      <Button variant="outlined">Details</Button>
-                      <Button variant={(hasEnrolled(user, project.id))?"contained":"outlined"} color='success' disabled={hasEnrolled(user,project.id)} onClick={()=>{enrollToProject(project)}}>{(hasEnrolled(user,project.id))?"Enrolled":"Enroll"}</Button>
+                      <Button variant="outlined" onClick={()=>{navigate("/projects/"+project.id)}}>Details</Button>
+                      <Button variant={(isEnrolled(user, project.id))?"contained":"outlined"} color='success' disabled={isEnrolled(user,project.id)} onClick={()=>{enrollToProject(project, setLocalUser)}}>{(isEnrolled(user,project.id))?"Enrolled":"Enroll"}</Button>
                     </Stack>
                   )}>
                     <ListItemText primary={project.title}></ListItemText>

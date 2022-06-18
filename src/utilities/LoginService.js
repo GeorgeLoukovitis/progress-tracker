@@ -13,6 +13,10 @@ const login = (username, password, setUser) => {
       })
 }
 
+const logout = () => {
+  setUser(null)
+}
+
 const register = (username, password, setUser) => {
   fetch("http://localhost:8000/users",
     {
@@ -30,6 +34,29 @@ const register = (username, password, setUser) => {
     })
 }
 
+const getUser = () =>{
+  return JSON.parse(localStorage.getItem("user"))
+}
+
+const setUser = (usr) => {
+  localStorage.setItem("user", JSON.stringify(usr))
+}
+
+const refresh = () => {
+  const uid = JSON.parse(localStorage.getItem("user")).id
+  fetch("http://localhost:8000/users/"+uid)
+    .then((res)=>{
+      if(res.ok)
+      {
+        return res.json()
+      }
+    })
+    .then((data)=>{
+      setUser(data)
+    })
+
+}
 
 
-export {login, register}
+
+export {login, register, getUser, setUser, refresh}

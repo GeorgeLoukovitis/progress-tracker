@@ -8,8 +8,11 @@ import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
 import { CssBaseline } from '@mui/material';
 import SideMenu from './SideMenu';
+import {getUser} from "../utilities/LoginService"
 
-const Home = ({logoutFun, user}) => {
+const Home = ({logoutFun}) => {
+
+  const user = getUser()
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{

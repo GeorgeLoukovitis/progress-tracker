@@ -18,14 +18,8 @@
       "id": 3,
       "projectsEnrolled": [
         {
-          "id": 1,
-          "milestonesAchieved": [
-            "Wake up",
-            "Wake up",
-            "Wake up",
-            "Wake up",
-            "Wake up"
-          ]
+          "projectId": "1",
+          "milestonesAchieved": []
         }
       ]
     },
@@ -87,6 +81,54 @@
       },
       "date": 1655500908267,
       "id": 1
+    },
+    {
+      "title": "Hello ",
+      "admins": [
+        {
+          "username": "Xristina",
+          "password": "Papavasilopoulou",
+          "id": 3,
+          "projectsEnrolled": [
+            {
+              "id": 1,
+              "milestonesAchieved": [
+                "Wake up",
+                "Wake up",
+                "Wake up",
+                "Wake up",
+                "Wake up"
+              ]
+            }
+          ]
+        }
+      ],
+      "milestones": [
+        {
+          "name": "fqgrq",
+          "required": false,
+          "prerequisites": []
+        }
+      ],
+      "creator": {
+        "username": "Xristina",
+        "password": "Papavasilopoulou",
+        "id": 3,
+        "projectsEnrolled": [
+          {
+            "id": 1,
+            "milestonesAchieved": [
+              "Wake up",
+              "Wake up",
+              "Wake up",
+              "Wake up",
+              "Wake up"
+            ]
+          }
+        ]
+      },
+      "date": 1655504788516,
+      "id": 2
     }
   ]
 }
