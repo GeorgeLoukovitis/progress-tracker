@@ -1,6 +1,6 @@
 const express = require("express")
 const mongoose = require("mongoose")
-const {ObjectId} = require("mongodb")
+const {ObjectId, ServerApiVersion} = require("mongodb")
 const User = require("./models/User")
 const Project = require("./models/Project")
 const Milestone = require("./models/Milestone")
@@ -18,7 +18,7 @@ app.use(express.json())
 app.use(morgan("dev"))
 let server;
 
-mongoose.connect(process.env.DB_URL)
+mongoose.connect(process.env.REMOTE_DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 })
   .then((connection)=>{
     server = app.listen(process.env.SERVING_PORT, ()=>{
       console.log("App listening on http://localhost:"+process.env.SERVING_PORT)
