@@ -33,7 +33,7 @@ app.post("/register", async (req, res) => {
 
   // Validate user input
   if (!(email && password && firstName && lastName)) {
-    res.status(400).send("All input is required");
+    return res.status(400).send("All input is required");
   }
 
   // check if user already exist
@@ -76,7 +76,7 @@ app.post("/register", async (req, res) => {
   console.log(result)
 
   // return new user
-  res.status(201).json(result);
+  return res.status(201).json(result);
 });
 
 app.post("/login", async (req, res)=>{
@@ -84,7 +84,7 @@ app.post("/login", async (req, res)=>{
 
   // Validate user input
   if (!(email && password)) {
-    res.status(400).send("All input is required");
+    return res.status(400).send("All input is required");
   }
   // Validate if user exist in our database
   const user = await User.findOne({ email });
@@ -137,33 +137,52 @@ app.get("/milestones/:id", (req, res)=>{
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
   else {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
   }
 })
 
 app.post("/milestones", (req, res)=>{
   const milestone = req.body
-  console.log(milestone)
+  const {name, prerequisites} = milestone
 
-  const document = new Milestone(milestone)
+  if(!name)
+  {
+    return res.status(400).send("All input is required");
+  }
+
+  const document = new Milestone(
+    {
+      name,
+      prerequisites: (prerequisites)?prerequisites.map((p)=>(ObjectId(p))):[]
+    }
+  )
   console.log(document)
   document.save()
     .then(result=>res.status(201).send(result))
     .catch(err=>res.status(500).send({error: err}))
 })
 
-app.delete("/milestones/:id", (req, res)=>{
-  const id = req.params.id
-  console.log(id)
+app.delete("/milestones/:id", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  const mid = req.params.id
 
-  if(ObjectId.isValid(id))
+  if(ObjectId.isValid(mid))
   {
-    Milestone.findByIdAndDelete(id)
-      .then(result=>res.status(200).json(result))
-      .catch(err=>res.status(500).send({error: err}))
+    const milestone = await Milestone.findById(mid)
+    if(milestone.assosiatedProject)
+    {
+      const project = await Project.findById(milestone.assosiatedProject)
+      if((uid == project.creator) || project.admins.includes(uid))
+      {
+        project.milestones = project.milestones.filter((m)=>(m!==mid))
+        await project.save()
+        const milestoneResult = await Milestone.findByIdAndDelete(mid)
+        return res.status(200).send({result:milestoneResult})
+      }
+    }
   }
   else {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
   }
 })
 
@@ -203,7 +222,7 @@ app.get("/users/:id", auth, (req, res)=>{
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
   else {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
   }
 })
 
@@ -227,7 +246,7 @@ app.delete("/users/:id", (req, res)=>{
       .catch(err=>res.status(500).send({error: err}))
   }
   else {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
   }
 })
 
@@ -251,60 +270,41 @@ app.get("/projects/:id", (req, res)=>{
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
   else {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
   }
 })
 
-app.post("/projects", async (req, res) => {
+app.post("/projects", auth, async (req, res) => {
 
+  const uid = req.user.user_id
   // Get user input
-  const { title, creator, admins, usersEnrolled, milestones } = req.body;
+  const { title, admins, usersEnrolled, milestones } = req.body;
 
   // Validate user input
-  if (!(title && creator && admins)) {
-    res.status(400).send("All input is required");
+  if (!(title && admins)) {
+    return res.status(400).send("All input is required");
   }
 
   const project = {
     title,
-    creator: ObjectId(creator),
+    creator: ObjectId(uid),
     admins : admins.map((admin)=>ObjectId(admin)),
     usersEnrolled: (usersEnrolled)?usersEnrolled.map((uid)=>(ObjectId(uid))):[],
     milestones: (milestones)?milestones.map((mid)=>(ObjectId(mid))):[]
   }
   const document = new Project(project)
 
-  // const result = await document.save()
-  // for(mid of milestones){
-  //   if(ObjectId.isValid(mid))
-  //   {
-  //     const milestone = await Milestone.findById(mid)
-  //     milestone.assosiatedProject = result._id
-  //     const milestoneResult = await milestone.save()
-  //     console.log(milestoneResult)
-  //   }
-  // }
-  // res.status(201).send(result)
-
-
-  document.save()
-    .then(result=>{
-      for(const mid of result.milestones)
-      {
-        if(ObjectId.isValid(mid))
-        {
-          Milestone.findById(mid)
-            .then((milestone)=>{
-              milestone.assosiatedProject = result._id
-              milestone.save()
-                .then(()=>{
-                  res.status(201).send(result)
-                })
-            })
-        }
-      }
-    })
-    .catch(err=>res.status(500).send({err: `Error: ${err}`}))
+  const result = await document.save()
+  for(mid of milestones){
+    if(ObjectId.isValid(mid))
+    {
+      const milestone = await Milestone.findById(mid)
+      milestone.assosiatedProject = result._id
+      const milestoneResult = await milestone.save()
+      console.log(milestoneResult)
+    }
+  }
+  return res.status(201).send(result)
 })
 
 app.delete("/projects/:id", (req, res)=>{
@@ -318,7 +318,7 @@ app.delete("/projects/:id", (req, res)=>{
       .catch(err=>res.status(500).send({error: err}))
   }
   else {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
   }
 })
 
@@ -341,6 +341,114 @@ app.post("/enrollToProject", auth, async (req, res)=>{
   }
   else
   {
-    res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send({err: "Invalid ID"})
+  }
+})
+
+app.post("/awardMilestone", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  const mid = req.body.milestoneId
+  const awardTo = req.body.userIds
+
+  if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid)))
+    return res.status(500).send({err: "Invalid ID"})
+
+  const milestone = await Milestone.findById(mid)
+  const pid = milestone.assosiatedProject
+
+  if(!ObjectId.isValid(pid))
+    return res.status(500).send({err: "Invalid ID"})
+
+  const project = await Project.findById(pid)
+  if((uid == project.creator) || project.admins.includes(uid))
+  {
+    for(const usrId of awardTo)
+    {
+      const usr = await User.findById(usrId)
+      if(usr.projectsJoined.includes(ObjectId(pid)))
+      {
+        usr.milestones.push(ObjectId(mid))
+        await usr.save()
+      }
+    }
+    return res.status(201).send({result: "ok"})
+  }
+  else
+  {
+    return res.status(500).send({err: "Your are not an admin"})
+  }
+
+})
+
+app.get("/myProjects", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  console.log(uid)
+  const projects = await Project.find({$or:[
+    {creator: uid},
+    {admins: {$all: [uid]}}
+  ]})
+  .sort({title:1})
+
+  return res.status(200).send(projects)
+})
+
+app.post("/addMilestoneToProject", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  const mid = req.body.milestoneId
+  const pid = req.body.projectId
+
+  if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
+    return res.status(500).send({err: "Invalid ID"})
+
+  const milestone = await Milestone.findById(mid)
+  if(milestone.assosiatedProject)
+    return res.status(500).send({err: "Already belongs to project"})
+
+  const project = await Project.findById(pid)
+  if((uid == project.creator) || project.admins.includes(uid))
+  {
+    project.milestones.push(ObjectId(mid))
+    const projectResult = await project.save()
+    return res.status(201).send({project: projectResult})
+  }
+  else
+  {
+    return res.status(500).send({err: "Your are not an admin"})
+  }
+
+})
+
+app.post("/addAdminToProject", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  const aid = req.body.adminId
+  const pid = req.body.projectId
+
+  if(!(ObjectId.isValid(aid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
+    return res.status(500).send({err: "Invalid ID"})
+
+  const project = await Project.findById(pid)
+  if(uid == project.creator)
+  {
+    project.admins.push(ObjectId(aid))
+    const projectResult = await project.save()
+    return res.status(201).send({project: projectResult})
+  }
+  else
+  {
+    return res.status(500).send({err: "Your are not an admin"})
+  }
+
+})
+
+app.get("/joinedProjects", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  if(ObjectId(uid))
+  {
+    const user = await User.findById(uid).populate("projectsJoined")
+    return res.status(200).send(user.projectsJoined)
+  }
+  else
+  {
+    return res.status(500).send({err: "Invalid Id"})
   }
 })
