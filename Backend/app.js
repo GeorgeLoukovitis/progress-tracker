@@ -18,10 +18,10 @@ app.use(express.json())
 app.use(morgan("dev"))
 let server;
 
-mongoose.connect("mongodb://localhost:27017/appTest")
+mongoose.connect(process.env.DB_URL)
   .then((connection)=>{
-    server = app.listen(8080, ()=>{
-      console.log("App listening on http://localhost:8080")
+    server = app.listen(process.env.SERVING_PORT, ()=>{
+      console.log("App listening on http://localhost:"+process.env.SERVING_PORT)
     })
     
   })
