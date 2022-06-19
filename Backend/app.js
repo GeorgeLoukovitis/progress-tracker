@@ -123,7 +123,7 @@ app.get("/",auth, async (req, res)=>{
 
 app.get("/milestones", (req, res)=>{
 
-  Milestone.find().sort({name:-1})
+  Milestone.find().sort({name:1})
     .then(result=>res.status(200).send(result))
     .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
 })
@@ -170,16 +170,36 @@ app.delete("/milestones/:id", (req, res)=>{
 app.get("/users", (req, res)=>{
   
   User.find().sort({username:1})
-    .then(result=>res.status(200).send(result))
+    .then(result=>{
+      res.status(200).send(result.map(usr=>{
+        return {
+          username: usr.username,
+          uid: usr._id
+        }
+      }))
+    })
     .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
 })
 
-app.get("/users/:id", (req, res)=>{
+app.get("/users/:id", auth, (req, res)=>{
   
   const id = req.params.id
   if (ObjectId.isValid(id)){
     User.findById(id)
-      .then(result=>res.status(200).send(result))
+      .then(result=>{
+        if(req.user.user_id == id)
+        {
+          res.status(200).send(result)
+        }
+        else
+        {
+          res.status(200).send({
+            firstName: result.firstName,
+            lastName: result.lastName,
+            milestones: result.milestones
+          })
+        }
+      })
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
   else {
@@ -213,7 +233,9 @@ app.delete("/users/:id", (req, res)=>{
 
 app.get("/projects", (req, res)=>{
   
-  Project.find().sort({name: 1})
+  Project.find()
+    .sort({title: 1})
+    .populate("milestones")
     .then(result=>res.status(200).send(result))
     .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
 })
@@ -223,6 +245,8 @@ app.get("/projects/:id", (req, res)=>{
 
   if (ObjectId.isValid(id)){
     Project.findById(id)
+      .populate("milestones")
+      .populate("creator")
       .then(result=>res.status(200).send(result))
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
@@ -231,12 +255,55 @@ app.get("/projects/:id", (req, res)=>{
   }
 })
 
-app.post("/projects", (req, res)=> {
-  const project = req.body
+app.post("/projects", async (req, res) => {
+
+  // Get user input
+  const { title, creator, admins, usersEnrolled, milestones } = req.body;
+
+  // Validate user input
+  if (!(title && creator && admins)) {
+    res.status(400).send("All input is required");
+  }
+
+  const project = {
+    title,
+    creator: ObjectId(creator),
+    admins : admins.map((admin)=>ObjectId(admin)),
+    usersEnrolled: (usersEnrolled)?usersEnrolled.map((uid)=>(ObjectId(uid))):[],
+    milestones: (milestones)?milestones.map((mid)=>(ObjectId(mid))):[]
+  }
   const document = new Project(project)
 
+  // const result = await document.save()
+  // for(mid of milestones){
+  //   if(ObjectId.isValid(mid))
+  //   {
+  //     const milestone = await Milestone.findById(mid)
+  //     milestone.assosiatedProject = result._id
+  //     const milestoneResult = await milestone.save()
+  //     console.log(milestoneResult)
+  //   }
+  // }
+  // res.status(201).send(result)
+
+
   document.save()
-    .then(result=>{res.status(201).send({dbResponse: result, object: document})})
+    .then(result=>{
+      for(const mid of result.milestones)
+      {
+        if(ObjectId.isValid(mid))
+        {
+          Milestone.findById(mid)
+            .then((milestone)=>{
+              milestone.assosiatedProject = result._id
+              milestone.save()
+                .then(()=>{
+                  res.status(201).send(result)
+                })
+            })
+        }
+      }
+    })
     .catch(err=>res.status(500).send({err: `Error: ${err}`}))
 })
 
@@ -251,6 +318,29 @@ app.delete("/projects/:id", (req, res)=>{
       .catch(err=>res.status(500).send({error: err}))
   }
   else {
+    res.status(500).send({err: "Invalid ID"})
+  }
+})
+
+app.post("/enrollToProject", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  const pid = req.body.projectId
+  console.log(uid)
+  console.log(req)
+  if(ObjectId.isValid(uid) && ObjectId.isValid(pid))
+  {
+    const user = await User.findById(uid)
+    user.projectsJoined.push(ObjectId(pid))
+    const userResult = await user.save()
+
+    const project = await Project.findById(pid)
+    project.usersEnrolled.push(ObjectId(uid))
+    const projectResult = await project.save()
+
+    res.status(200).send({user:userResult, project, projectResult})
+  }
+  else
+  {
     res.status(500).send({err: "Invalid ID"})
   }
 })

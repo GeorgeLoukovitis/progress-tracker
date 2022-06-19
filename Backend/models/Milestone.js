@@ -14,11 +14,9 @@ const milestoneSchema = new mongoose.Schema({
   },
   prerequisites: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Milestone"
-  }],
-  age: {
-    type: Number
-  }
+    ref: "Milestone",
+    required: true
+  }]
 })
 
 const Milestone = mongoose.model("Milestone", milestoneSchema)
