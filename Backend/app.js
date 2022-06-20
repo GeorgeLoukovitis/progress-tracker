@@ -7,6 +7,7 @@ const Milestone = require("./models/Milestone")
 const morgan = require("morgan")
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
+const cors = require("cors")
 const env = require("dotenv").config()
 const auth = require("./middleware/auth");
 
@@ -16,6 +17,7 @@ console.log(env)
 const app = express()
 app.use(express.json())
 app.use(morgan("dev"))
+app.use(cors())
 let server;
 
 mongoose.connect(process.env.REMOTE_DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 })
@@ -30,6 +32,8 @@ app.post("/register", async (req, res) => {
 
   // Get user input
   const { firstName, lastName, email, password } = req.body;
+  console.log("Body")
+  console.log(req.body)
 
   // Validate user input
   if (!(email && password && firstName && lastName)) {
@@ -41,6 +45,7 @@ app.post("/register", async (req, res) => {
   const oldUser = await User.findOne({ email: email });
 
   if (oldUser) {
+    console.log("User Already Exist. Please Login")
     return res.status(409).send("User Already Exist. Please Login");
   }
 
@@ -55,6 +60,9 @@ app.post("/register", async (req, res) => {
     email: email.toLowerCase(), // sanitize
     password: encryptedUserPassword,
   });
+
+  console.log("User")
+  console.log(user)
 
   // Create token
   const token = jwt.sign(
@@ -73,6 +81,7 @@ app.post("/register", async (req, res) => {
     token
   }
 
+  console.log("Result")
   console.log(result)
 
   // return new user
@@ -193,7 +202,7 @@ app.get("/users", (req, res)=>{
       res.status(200).send(result.map(usr=>{
         return {
           username: usr.username,
-          uid: usr._id
+          _id: usr._id
         }
       }))
     })
@@ -352,13 +361,19 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   const awardTo = req.body.userIds
 
   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid)))
+  {
+    console.log("Milestone not valid " + mid)
     return res.status(500).send({err: "Invalid ID"})
+  }
 
   const milestone = await Milestone.findById(mid)
   const pid = milestone.assosiatedProject
 
   if(!ObjectId.isValid(pid))
+  {
+    console.log("Project not valid "+pid)
     return res.status(500).send({err: "Invalid ID"})
+  }
 
   const project = await Project.findById(pid)
   if((uid == project.creator) || project.admins.includes(uid))
@@ -376,6 +391,7 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   }
   else
   {
+    console.log("Not an admin")
     return res.status(500).send({err: "Your are not an admin"})
   }
 

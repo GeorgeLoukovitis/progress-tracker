@@ -6,7 +6,7 @@ import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
 import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack } from '@mui/material';
 import SideMenu from './SideMenu';
-import { getUser, refresh } from '../utilities/LoginService';
+import { getToken, getUser, refresh } from '../utilities/LoginService';
 
 const MyProjects = () => {
 
@@ -21,16 +21,35 @@ const MyProjects = () => {
 
   useEffect(()=>{
     refresh(setLocalUser)
-    fetch("http://localhost:8000/projects")
-      .then((res)=>res.json())
-      .then((data)=>{
-        let projectFilter = data.filter((project)=>(project.admins.map(admin=>admin.id).includes(user.id)))
-        console.log(projectFilter)
-        if(projectFilter.length !== 0)
-        {
-          setProjects(projectFilter)
-        }
-      })
+    fetch("http://localhost:8000/myProjects",
+    {
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>{
+      if(res.ok)
+      {
+        return res.json()
+      }
+      else
+      {
+        throw Error("Refresh Error")
+      }
+      
+    })
+    .then((data)=>{
+      console.log("Joined Projects")
+      console.log(data)
+      setProjects(data)
+    })
+    .catch((err)=>{
+      console.log(err.message)
+    })
   },[])
 
   return (
@@ -56,10 +75,10 @@ const MyProjects = () => {
             }>
               {
                 projects.map((project)=>(
-                  <ListItem key={project.id} secondaryAction={(
+                  <ListItem key={project._id} secondaryAction={(
                     <Stack direction="row">
-                      <Button onClick={()=>{navigate("/award-milestones/"+project.id)}}>Award Milestones</Button>
-                      <Button onClick={()=>{navigate("/manage-projects/"+project.id)}}>Manage</Button>
+                      <Button onClick={()=>{navigate("/award-milestones/"+project._id)}}>Award Milestones</Button>
+                      <Button onClick={()=>{navigate("/manage-projects/"+project._id)}}>Manage</Button>
                     </Stack>
                   )}>
                     <ListItemText primary={project.title}></ListItemText>

@@ -7,7 +7,7 @@ import Drawer from '@mui/material/Drawer';
 import AddIcon from '@mui/icons-material/Add';
 import { Box, Card, CardActions, CardContent, CssBaseline, List, ListItem, ListItemButton, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
 import SideMenu from './SideMenu';
-import {getUser, refresh} from "../utilities/LoginService"
+import {getToken, getUser, refresh} from "../utilities/LoginService"
 
 const Home = ({logoutFun}) => {
 
@@ -21,15 +21,34 @@ const Home = ({logoutFun}) => {
   const [projects, setProjects] = useState([]);
   useEffect(()=>{
     refresh(setLocalUser)
-    fetch("http://localhost:8000/projects")
-    .then((res)=>res.json())
-    .then((data)=>{
-      let projectFilter = data
-      console.log(projectFilter)
-      if(projectFilter.length !== 0)
+    fetch("http://localhost:8000/joinedProjects",
+    {
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>{
+      if(res.ok)
       {
-        setProjects(projectFilter)
+        return res.json()
       }
+      else
+      {
+        throw Error("Refresh Error")
+      }
+      
+    })
+    .then((data)=>{
+      console.log("Joined Projects")
+      console.log(data)
+      setProjects(data)
+    })
+    .catch((err)=>{
+      console.log(err.message)
     })
   },[])
 
@@ -56,9 +75,9 @@ const Home = ({logoutFun}) => {
                 <ListSubheader>Enrolled Projects</ListSubheader>
               }>
                 {projects.map((project)=>(
-                  <ListItem disablePadding key={project.id}>
+                  <ListItem disablePadding key={project._id}>
                     <ListItemButton onClick={()=>{
-                      navigate("/projects/"+project.id)
+                      navigate("/projects/"+project._id)
                     }}>
                       <ListItemText primary={project.title} />
                     </ListItemButton>

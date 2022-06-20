@@ -1,36 +1,75 @@
 
-const login = (username, password, setUser) => {
-    fetch("http://localhost:8000/users")
-      .then((res)=>res.json())
-      .then((data)=>{
-        let userFilter = data.filter((usr)=>(usr.username === username && usr.password === password))
-        console.log(userFilter)
-        if(userFilter.length !== 0)
+const login = (email, password, updateState) => {
+    fetch("http://localhost:8000/login",
+    {
+      mode: "cors",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify({email, password})
+    })
+      .then((res)=>{
+        if(res.ok)
         {
-          localStorage.setItem("user", JSON.stringify(userFilter[0]))
-          setUser(userFilter[0])
+          return res.json()
         }
+        else
+        {
+          throw Error("Login Error")
+        }
+      })
+      .then((data)=>{
+        if(data)
+        {
+          console.log(data)
+          setUser(data)
+          updateState(data)
+          setToken(data.token)
+        }
+      })
+      .catch((err)=>
+      {
+        console.log(err.message)
       })
 }
 
 const logout = () => {
-  setUser(null)
+  localStorage.removeItem("user")
+  localStorage.removeItem("token")
 }
 
-const register = (username, password, setUser) => {
-  fetch("http://localhost:8000/users",
+const register = (email, password, updateState) => {
+  fetch("http://localhost:8000/register",
     {
+      mode: "cors",
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({username, password, projectsEnrolled:[]})
+      body: JSON.stringify({email, password, firstName:"George", lastName:"Loukovitis"})
     })
     .then((res)=>{
       if(res.ok)
       {
-        login(username, password,setUser)
+        return res.json()
       }
+      else
+      {
+        throw Error("Registration Error")
+      }
+    })
+    .then((data)=>{
+      console.log(data)
+      updateState(data)
+      setUser(data)
+      setToken(data.token)
+    })
+    .catch((err)=>
+    {
+      console.log(err.message)
     })
 }
 
@@ -42,20 +81,48 @@ const setUser = (usr) => {
   localStorage.setItem("user", JSON.stringify(usr))
 }
 
+const getToken = () => {
+  return localStorage.getItem("token")
+}
+
+const setToken = (tkn) => {
+  localStorage.setItem("token", tkn)
+}
+
 const refresh = (updateState) => {
-  if(JSON.parse(localStorage.getItem("user")))
+  if(localStorage.getItem("user"))
   {
-    const uid = JSON.parse(localStorage.getItem("user")).id
-    fetch("http://localhost:8000/users/"+uid)
+    const uid = getUser()._id
+    const token = getToken()
+    console.log("Refresh user " + uid)
+    console.log(token)
+    fetch("http://localhost:8000/users/"+uid,
+      {
+        mode: "cors",
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-token": token, 
+          "Access-Control-Allow-Origin": "*"
+        },
+      })
       .then((res)=>{
         if(res.ok)
         {
           return res.json()
         }
+        else
+        {
+          throw Error("Refresh Error")
+        }
+        
       })
       .then((data)=>{
         setUser(data)
         updateState(data)
+      })
+      .catch((err)=>{
+        console.log(err.message)
       })
   }
 
@@ -63,4 +130,4 @@ const refresh = (updateState) => {
 
 
 
-export {login, logout, register, getUser, setUser, refresh}
+export {login, logout, register, getUser, setUser, refresh, getToken}

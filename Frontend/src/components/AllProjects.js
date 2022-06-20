@@ -6,7 +6,7 @@ import Drawer from '@mui/material/Drawer';
 import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
 import SideMenu from './SideMenu';
 import { enrollToProject, isEnrolled } from '../utilities/ProjectService';
-import { getUser, refresh} from '../utilities/LoginService';
+import { getToken, getUser, refresh} from '../utilities/LoginService';
 
 const AllProjects = () => {
 
@@ -21,13 +21,34 @@ const AllProjects = () => {
 
   useEffect(()=>{
     refresh(setLocalUser)
-    fetch("http://localhost:8000/projects")
-    .then((res)=>res.json())
-    .then((data)=>{
-      if(data !== null)
+    fetch("http://localhost:8000/projects",
+    {
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>{
+      if(res.ok)
       {
-        setProjects(data)
+        return res.json()
       }
+      else
+      {
+        throw Error("Refresh Error")
+      }
+      
+    })
+    .then((data)=>{
+      console.log("Projects")
+      console.log(data)
+      setProjects(data)
+    })
+    .catch((err)=>{
+      console.log(err.message)
     })
   },[])
 
@@ -64,10 +85,10 @@ const AllProjects = () => {
             }>
               {
                 projects.filter((project)=>(project.title.includes(searchTerm))).map((project)=>(
-                  <ListItem key={project.id} secondaryAction={(
+                  <ListItem key={project._id} secondaryAction={(
                     <Stack direction="row" spacing={1}>
-                      <Button variant="outlined" onClick={()=>{navigate("/projects/"+project.id)}}>Details</Button>
-                      <Button variant={(isEnrolled(user, project.id))?"contained":"outlined"} color='success' disabled={isEnrolled(user,project.id)} onClick={()=>{enrollToProject(project, setLocalUser)}}>{(isEnrolled(user,project.id))?"Enrolled":"Enroll"}</Button>
+                      <Button variant="outlined" onClick={()=>{navigate("/projects/"+project._id)}}>Details</Button>
+                      <Button variant={(isEnrolled(user, project._id))?"contained":"outlined"} color='success' disabled={isEnrolled(user,project._id)} onClick={()=>{enrollToProject(project._id, setLocalUser)}}>{(isEnrolled(user,project._id))?"Enrolled":"Enroll"}</Button>
                     </Stack>
                   )}>
                     <ListItemText primary={project.title}></ListItemText>

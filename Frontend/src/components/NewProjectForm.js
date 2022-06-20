@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import {Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, Divider, IconButton, List, ListItem, ListItemText,ListSubheader, Stack, TextField, Typography} from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import { getUser, refresh } from '../utilities/LoginService';
+import { getToken, getUser, refresh } from '../utilities/LoginService';
 
 const SetTitle = ({setProjectTitle, nextStage}) => {
 
@@ -52,12 +52,23 @@ const SetAdmins = ({setProjectAdmins, nextStage, previousStage, creator}) => {
   const [suggestions, setSuggestions] = useState([])
 
   useEffect(()=>{
-    fetch("http://localhost:8000/users")
-      .then((res)=>res.json())
-      .then((data)=>{
-        data = data.filter(s=>s.id!==creator.id)
-        setSuggestions(data)
-      })
+    fetch("http://localhost:8000/users",
+    {
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>res.json())
+    .then((data)=>{
+      console.log("Users")
+      console.log(data)
+      data = data.filter(s=>s._id!==creator._id)
+      setSuggestions(data)
+    })
   }, [creator,])
 
   return (
@@ -78,30 +89,30 @@ const SetAdmins = ({setProjectAdmins, nextStage, previousStage, creator}) => {
         />
         <List>
           {suggestions.filter((val)=>(val.username.includes(searchTerm))).map((val=>(
-            <ListItem key={val.id} secondaryAction={
+            <ListItem key={val._id} secondaryAction={
               <IconButton onClick={()=>{
                 setAdmins([...admins, val])
-                setSuggestions(suggestions.filter((suggestion)=>(suggestion.id !== val.id)))
+                setSuggestions(suggestions.filter((suggestion)=>(suggestion._id !== val._id)))
               }}>
                 <AddIcon color='success'></AddIcon>
               </IconButton>
             }>
-              <ListItemText primary={val.username} secondary={"#"+val.id}></ListItemText>
+              <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
             </ListItem>
           )))}
         </List>
         <Divider></Divider>
         <List>
           {admins.map((val=>(
-            <ListItem key={val.id} secondaryAction={
+            <ListItem key={val._id} secondaryAction={
               <IconButton onClick={()=>{
                 setSuggestions([...suggestions, val])
-                setAdmins(admins.filter((admin)=>(admin.id !== val.id)))
+                setAdmins(admins.filter((admin)=>(admin._id !== val._id)))
               }}>
                 <RemoveIcon sx={{color:"red"}}></RemoveIcon>
               </IconButton>
             }>
-              <ListItemText primary={val.username} secondary={"#"+val.id}></ListItemText>
+              <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
             </ListItem>
           )))}
         </List>
@@ -135,24 +146,45 @@ const SetAdmins = ({setProjectAdmins, nextStage, previousStage, creator}) => {
 }
 
 
-const MilestoneForm = ({otherMilestones, setToggle, setMilestones}) => {
+const MilestoneForm = ({otherMilestones, setToggle, setMilestones, otherRequiredMilestones, setRequiredMilestones}) => {
 
   const [milestoneName, setMilestoneName] = useState("")
   const [milestoneRequired, setMilestoneRequired] = useState(false)
   const [milestonePrerequisites, setMilestonePrerequisites] = useState([])
 
   const saveMilestone = ()=>{
-    const milestone = {
-      name: milestoneName,
-      required: milestoneRequired,
-      prerequisites: milestonePrerequisites
-    }
-    if(otherMilestones.map(m=>m.name).includes(milestone.name))
-    {
-      console.log("Already Exists")
-      return false
-    }
-    setMilestones([...otherMilestones, milestone])
+
+    fetch("http://localhost:8000/milestones/",{
+      mode: "cors",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "x-access-token": getToken(),
+      },
+      body: JSON.stringify({
+        name: milestoneName,
+        prerequisites: milestonePrerequisites.map((m)=>m._id)
+      })
+    })
+    .then((res)=>{
+      if(res.ok)
+        return res.json()
+      else
+        throw Error("Refresh Error")
+    })
+    .then((data)=>{
+      console.log("Milestone")
+      console.log(data)
+      setMilestones([...otherMilestones, data])
+      if(milestoneRequired)
+      {
+        setRequiredMilestones([...otherRequiredMilestones, data])
+      }
+    })
+    .catch((err)=>{
+      console.log(err.message)
+    })
     return true
   }
 
@@ -188,9 +220,9 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones}) => {
           </ListSubheader>
         }>
           {otherMilestones.map((val=>(
-            <ListItem key={val.id} secondaryAction={
+            <ListItem key={val._id} secondaryAction={
               <Checkbox value={milestonePrerequisites.includes(val.name)} onChange={()=>{
-                  if(milestonePrerequisites.includes(val.id))
+                  if(milestonePrerequisites.includes(val._id))
                   {
                     setMilestonePrerequisites(milestonePrerequisites.filter((prerequisite)=>(prerequisite !== val.name)))
                   }
@@ -201,7 +233,7 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones}) => {
                 }
               }></Checkbox>
             }>
-              <ListItemText primary={val.name}></ListItemText>
+              <ListItemText primary={val.name} secondary={(otherRequiredMilestones.includes(val))?"Required":"Optional"} ></ListItemText>
             </ListItem>
           )))}
         </List>
@@ -236,8 +268,9 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones}) => {
 
 
 
-const SetMilestones = ({setProjectMilestones, nextStage, previousStage}) => {
+const SetMilestones = ({setProjectMilestones, setProjectRequiredMilestones, nextStage, previousStage}) => {
   const [milestones, setMilestones] = useState([])
+  const [requiredMilestones, setRequiredMilestone] = useState([])
   const [toggle, setToggle] = useState(false)
   return (
     (!toggle)?
@@ -256,7 +289,7 @@ const SetMilestones = ({setProjectMilestones, nextStage, previousStage}) => {
                 <RemoveIcon sx={{color:"red"}}></RemoveIcon>
               </IconButton>
             }>
-              <ListItemText primary={val.name} secondary={(val.required)?"Required":"Optional"}></ListItemText>
+              <ListItemText primary={val.name + " #" + val._id} secondary={(requiredMilestones.includes(val))?"Required":"Optional"}></ListItemText>
             </ListItem>
           )))}
         </List>
@@ -278,6 +311,7 @@ const SetMilestones = ({setProjectMilestones, nextStage, previousStage}) => {
           sx={{ mb: 2 }}
           onClick={()=>{
             setProjectMilestones(milestones)
+            setProjectRequiredMilestones(requiredMilestones)
             nextStage()
           }}
         >
@@ -286,11 +320,11 @@ const SetMilestones = ({setProjectMilestones, nextStage, previousStage}) => {
       </CardActions>
       
     </Card>:
-    <MilestoneForm otherMilestones={milestones} setToggle={setToggle} setMilestones={setMilestones}></MilestoneForm>
+    <MilestoneForm otherMilestones={milestones} setToggle={setToggle} setMilestones={setMilestones} otherRequiredMilestones={requiredMilestones} setRequiredMilestones={setRequiredMilestone}></MilestoneForm>
   )
 }
 
-const Preview = ({title, admins, milestones, previousStage, creator}) => {
+const Preview = ({title, admins, milestones, requiredMilestones, previousStage, creator}) => {
 
   const navigate = useNavigate();
 
@@ -307,8 +341,8 @@ const Preview = ({title, admins, milestones, previousStage, creator}) => {
             </ListSubheader>
           }>
             {admins.map((val=>(
-              <ListItem key={val.id} divider="true">
-                <ListItemText primary={val.username} secondary={"#"+val.id}></ListItemText>
+              <ListItem key={val._id} divider="true">
+                <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
               </ListItem>
             )))}
           </List>
@@ -318,8 +352,8 @@ const Preview = ({title, admins, milestones, previousStage, creator}) => {
             </ListSubheader>
           }>
             {milestones.map((val=>(
-              <ListItem key={val.name} divider="true">
-                <ListItemText primary={val.name} secondary={(val.required)?"Required":"Optional"}></ListItemText>
+              <ListItem key={val._id} divider="true">
+                <ListItemText primary={val.name} secondary={(requiredMilestones.includes(val))?"Required":"Optional"}></ListItemText>
               </ListItem>
             )))}
           </List>
@@ -341,13 +375,21 @@ const Preview = ({title, admins, milestones, previousStage, creator}) => {
           variant="contained"
           sx={{ mb: 2 }}
           onClick={()=>{
-            const project = {title, admins, milestones, creator, date: Date.now()}
+            const project = {
+              title, 
+              admins: admins.map((a)=>(a._id)), 
+              milestones : milestones.map((m)=>(m._id)),
+              requiredMilestones: requiredMilestones.map((m)=>(m._id))
+            }
             console.log(project)
             fetch("http://localhost:8000/projects",
             {
+              mode: "cors",
               method: "POST",
               headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "x-access-token": getToken(), 
+                "Access-Control-Allow-Origin": "*"
               },
               body: JSON.stringify(project)
             })
@@ -358,7 +400,7 @@ const Preview = ({title, admins, milestones, previousStage, creator}) => {
               }
             })
             .then((data)=>{
-              console.log("Response")
+              console.log("Created Project")
               console.log(data)
               navigate("/")
             })
@@ -398,14 +440,15 @@ const NewProjectForm = () => {
     else if (s === 1)
       return (<SetAdmins setProjectAdmins={setProjectAdmins} nextStage = {nextStage} previousStage = {previousStage} creator = {user}></SetAdmins>)
     else if (s === 2)
-      return (<SetMilestones setProjectMilestones={setProjectMilestones} nextStage = {nextStage} previousStage = {previousStage}></SetMilestones>)
+      return (<SetMilestones setProjectMilestones={setProjectMilestones} setProjectRequiredMilestones={setProjectRequiredMilestones} nextStage = {nextStage} previousStage = {previousStage}></SetMilestones>)
     else if (s === 3)
-      return (<Preview title={projectTitle} admins = {projectAdmins} milestones = {projectMilestones} previousStage = {previousStage} creator={user}></Preview>)
+      return (<Preview title={projectTitle} admins = {projectAdmins} milestones = {projectMilestones} requiredMilestones = {projectRequiredMilestones} previousStage = {previousStage} creator={user}></Preview>)
   }
 
   const [projectTitle, setProjectTitle] = useState("")
   const [projectAdmins, setProjectAdmins] = useState([])
   const [projectMilestones, setProjectMilestones] = useState([])
+  const [projectRequiredMilestones, setProjectRequiredMilestones] = useState([])
 
   return (
     <div>

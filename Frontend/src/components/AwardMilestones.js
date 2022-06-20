@@ -2,22 +2,34 @@ import {Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseli
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import DoneIcon from '@mui/icons-material/Done';
+import { getToken } from '../utilities/LoginService';
 
 
 const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
 
   const [project, setProject] = useState(null)
   useEffect(()=>{
-    fetch("http://localhost:8000/projects/"+projectId)
-      .then((res)=>{
-        if(res.ok)
-        {
-          return res.json()
-        }
-      })
-      .then((data)=>{
-        setProject(data)
-      })
+    fetch("http://localhost:8000/projects/"+projectId,
+    {
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>{
+      if(res.ok)
+      {
+        return res.json()
+      }
+    })
+    .then((data)=>{
+      console.log("Project")
+      console.log(data)
+      setProject(data)
+    })
   },[])
   
   const navigate = useNavigate()
@@ -32,11 +44,11 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
         {(project)?
         <List>
           {project.milestones.map((val=>(
-            <ListItem key={val.name} secondaryAction={
-              <Checkbox checked={milestone==val.name}></Checkbox>
+            <ListItem key={val._id} secondaryAction={
+              <Checkbox checked={milestone==val}></Checkbox>
             }>
-              <ListItemButton onClick={()=>{setMilestone(val.name)}}>
-                <ListItemText primary={val.name} secondary={(val.required)?"Required":"Optional"}></ListItemText>
+              <ListItemButton onClick={()=>{setMilestone(val)}}>
+                <ListItemText primary={val.name} secondary={(project.requiredMilestones.includes(val._id))?"Required":"Optional"}></ListItemText>
               </ListItemButton>
             </ListItem>
           )))}
@@ -110,22 +122,22 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
         />
         <List>
           {users.filter((u)=>(u.username.includes(searchTerm))).map((val=>(
-            <ListItem key={val.id} secondaryAction={
-              <Checkbox checked={usersToAward.includes(val.id)}></Checkbox>
+            <ListItem key={val._id} secondaryAction={
+              <Checkbox checked={usersToAward.includes(val._id)}></Checkbox>
             }>
               <ListItemButton onClick={()=>{
                 if(usersToAward.includes(val.id))
                 {
                   console.log("Remove")
-                  setUsersToAward(usersToAward.filter(u=>(u!=val.id)))
+                  setUsersToAward(usersToAward.filter(u=>(u!=val._id)))
                 }
                 else
                 {
                   console.log("Add")
-                  setUsersToAward([...usersToAward, val.id])
+                  setUsersToAward([...usersToAward, val._id])
                 }
               }}>
-                <ListItemText primary={val.username} secondary={"#"+val.id}></ListItemText>
+                <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
               </ListItemButton>
             </ListItem>
           )))}
@@ -202,47 +214,24 @@ const AwardMilestones = () => {
   }
 
   const awardUsers = () => {
-    for(const userId of userIds){
-      fetch("http://localhost:8000/users/"+userId)
-        .then((res)=>{
-          if(res.ok)
-          {
-            return res.json()
-          }
-        })
-        .then((data)=>{
-          var i = 0;
-          while(i< data.projectsEnrolled.length)
-          {
-            if(data.projectsEnrolled[i].id == projectId)
-            {
-              data.projectsEnrolled[i].milestonesAchieved.push(milestoneToAward)
-              break
-            }
-          }
-          fetch("http://localhost:8000/users/"+userId,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-          })
-          .then((res1)=>{
-            if(res1.ok)
-            {
-              return res1.json()
-            }
-          })
-          .then((data1)=>{
-            console.log(data1)
-          })
-        })
-    }
+    console.log("Award")
+    console.log(milestoneToAward)
+    console.log(userIds)
+    fetch("http://localhost:8000/awardMilestone/",
+    {
+      mode: "cors",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify({milestoneId:milestoneToAward._id, userIds})
+    })
   }
 
   const [userIds, setUserIds] = useState([])
-  const [milestoneToAward, setMilestoneToAward] = useState("")
+  const [milestoneToAward, setMilestoneToAward] = useState(null)
   
   const showForm = (s,previousStage, nextStage, setMilestoneToAward)=>{
     if(s === 0)

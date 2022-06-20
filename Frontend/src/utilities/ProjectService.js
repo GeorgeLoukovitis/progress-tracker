@@ -1,44 +1,54 @@
-import { getUser, setUser } from "./LoginService";
+import { getToken, getUser, setUser } from "./LoginService";
 
-const isMilestoneAchieved = (usr,projectId,milestone)=>{
-  const userProjectIds = usr.projectsEnrolled.map((p)=>(p.projectId))
-  if(!userProjectIds.includes(projectId))
-    return false;
-  const currentProject = usr.projectsEnrolled.filter((p)=>(p.projectId==projectId))[0]
-  return currentProject.milestonesAchieved.includes(milestone.name)
+const isMilestoneAchieved = (usr,milestone)=>{
+  // const userProjectIds = usr.projectsEnrolled.map((p)=>(p.projectId))
+  // if(!userProjectIds.includes(projectId))
+  //   return false;
+  // const currentProject = usr.projectsEnrolled.filter((p)=>(p.projectId==projectId))[0]
+  // return currentProject.milestonesAchieved.includes(milestone.name)
+
+  return usr.milestones.includes(milestone._id)
 
 }
 
-const isEnrolled = (usr,id) => {
-  const projectIds = usr.projectsEnrolled.map((p)=>p.projectId)
+const isEnrolled = (usr,pid) => {
+  console.log("isEnrolled-usr")
+  console.log(usr)
+  const projectIds = usr.projectsJoined
   console.log(projectIds)
-  return projectIds.includes(id)
+  return projectIds.includes(pid)
 }
 
-const enrollToProject = (id, updateState)=>{
-  const user = getUser()
-  user.projectsEnrolled.push({
-    projectId: id,
-    milestonesAchieved: []
-  })
-  fetch("http://localhost:8000/users/"+user.id,
+const enrollToProject = (pid, updateState)=>{
+  const token = getToken()
+  fetch("http://localhost:8000/enrollToProject/",
   {
-    method: "PUT",
+    mode: "cors",
+    method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "x-access-token": token, 
+      "Access-Control-Allow-Origin": "*"
     },
-    body: JSON.stringify(user)
+    body: JSON.stringify({projectId:pid})
   })
   .then((res)=>{
     if(res.ok)
     {
       return res.json()
     }
+    else
+    {
+      throw Error("Enrollment error")
+    }
   })
   .then((data)=>{
-    setUser(data)
-    updateState(data)
+    setUser(data.user)
+    updateState(data.user)
     console.log(data)
+  })
+  .catch((err)=>{
+    console.log(err.message)
   })
 }
 

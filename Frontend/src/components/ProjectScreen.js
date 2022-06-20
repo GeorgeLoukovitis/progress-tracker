@@ -5,7 +5,7 @@ import {useParams} from "react-router-dom"
 import MyAppBar from './MyAppBar';
 import SideMenu from './SideMenu';
 import { useEffect } from 'react';
-import { getUser, refresh } from '../utilities/LoginService';
+import { getToken, getUser, refresh } from '../utilities/LoginService';
 import { isEnrolled, isMilestoneAchieved, enrollToProject } from '../utilities/ProjectService';
 
 const ProjectScreen = () => {
@@ -16,19 +16,29 @@ const ProjectScreen = () => {
 
   useEffect(()=>{
     refresh(setLocalUser)
-    fetch("http://localhost:8000/projects/")
-      .then((res)=>{
-        if(res.ok)
-        {
-          return res.json()
-        }
-        else{
-          throw Error()
-        }
-      })
-      .then((data)=>{
-        setProject(data.filter((p)=>(p.id == projectId))[0])
-      })
+    fetch("http://localhost:8000/projects/"+projectId,{
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>{
+      if(res.ok)
+      {
+        return res.json()
+      }
+      else{
+        throw Error()
+      }
+    })
+    .then((data)=>{
+      console.log("Project")
+      console.log(data)
+      setProject(data)
+    })
   }, [])
 
   const [isDrawerOpen, setDrawer] = useState(false);
@@ -71,10 +81,10 @@ const ProjectScreen = () => {
               </Stack>
               <List>
                 {project.milestones.map((milestone)=>(
-                  <ListItem divider={true} key={milestone.name} secondaryAction={
+                  <ListItem divider={true} key={milestone._id} secondaryAction={
                     <Checkbox
                       edge="end"
-                      checked={isMilestoneAchieved(user,projectId,milestone)}
+                      checked={isMilestoneAchieved(user,milestone)}
                     />
                   }>
                     <ListItemIcon>

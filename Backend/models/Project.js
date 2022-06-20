@@ -31,7 +31,7 @@ const projectSchema = new mongoose.Schema({
       required: true
     }
   ],
-  requiredMilestone: [
+  requiredMilestones: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref:"Milestone",
