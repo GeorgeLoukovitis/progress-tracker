@@ -399,7 +399,6 @@ app.post("/awardMilestone", auth, async (req, res)=>{
 
 app.get("/myProjects", auth, async (req, res)=>{
   const uid = req.user.user_id
-  console.log(uid)
   const projects = await Project.find({$or:[
     {creator: uid},
     {admins: {$all: [uid]}}

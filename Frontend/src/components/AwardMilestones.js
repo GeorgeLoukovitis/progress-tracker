@@ -32,7 +32,7 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
       console.log(data)
       setProject(data)
     })
-  },[])
+  },[projectId,])
   
   const navigate = useNavigate()
   const [milestone, setMilestone] = useState("")
@@ -47,7 +47,7 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
         <List>
           {project.milestones.map((val=>(
             <ListItem key={val._id} secondaryAction={
-              <Checkbox checked={milestone==val}></Checkbox>
+              <Checkbox checked={milestone===val}></Checkbox>
             }>
               <ListItemButton onClick={()=>{setMilestone(val)}}>
                 <ListItemText primary={val.name} secondary={(project.requiredMilestones.includes(val._id))?"Required":"Optional"}></ListItemText>
@@ -109,11 +109,9 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
       .then((data)=>{
         setUsers(data)
       })
-  },[])
+  },[projectId,])
   
   const [usersToAward, setUsersToAward] = useState([]) 
-  const navigate = useNavigate()
-
   const [searchTerm, setSearchTerm] = useState("")
 
   return (
@@ -138,10 +136,10 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
               <Checkbox checked={usersToAward.includes(val._id)}></Checkbox>
             }>
               <ListItemButton onClick={()=>{
-                if(usersToAward.includes(val.id))
+                if(usersToAward.includes(val._id))
                 {
                   console.log("Remove")
-                  setUsersToAward(usersToAward.filter(u=>(u!=val._id)))
+                  setUsersToAward(usersToAward.filter(u=>(u!==val._id)))
                 }
                 else
                 {

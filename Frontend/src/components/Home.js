@@ -1,12 +1,12 @@
 import {React, useState, useEffect} from 'react'
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Card, CardActions, CardContent, Container, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemText, ListSubheader, Stack, TextField } from '@mui/material';
+import { Box, Button, Card, CardContent, Container, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemText, ListSubheader, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MyAppBar from './MyAppBar'
 import SideMenu from './SideMenu';
 import {getToken, getUser, refresh} from "../utilities/LoginService"
 
-const Home = ({logoutFun}) => {
+const Home = () => {
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
@@ -52,7 +52,7 @@ const Home = ({logoutFun}) => {
   return (
     <div>
       <CssBaseline></CssBaseline>
-      <MyAppBar title="Enrolled Projects" logoutFun={logoutFun} toggleDrawer={toggleDrawer}></MyAppBar>
+      <MyAppBar title="Enrolled Projects" toggleDrawer={toggleDrawer}></MyAppBar>
       <Container maxWidth="sm">
         <Drawer
           anchor={"left"}

@@ -1,4 +1,4 @@
-import { getToken, getUser, setUser } from "./LoginService";
+import { getToken, setUser } from "./LoginService";
 
 const isMilestoneAchieved = (usr,milestone)=>{
   return usr.milestones.includes(milestone._id)

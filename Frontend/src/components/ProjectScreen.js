@@ -1,4 +1,4 @@
-import {Box, Button, Card, CardContent, Checkbox, Container, CssBaseline, Divider, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Stack, Typography } from '@mui/material'
+import {Box, Button, Card, CardContent, Checkbox, CssBaseline, Divider, Drawer, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material'
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import {React, useState} from 'react'
 import {useParams} from "react-router-dom"
@@ -39,7 +39,7 @@ const ProjectScreen = () => {
       console.log(data)
       setProject(data)
     })
-  }, [])
+  }, [projectId,])
 
   const [isDrawerOpen, setDrawer] = useState(false);
   const toggleDrawer = ()=>{
