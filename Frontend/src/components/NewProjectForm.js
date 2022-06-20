@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react'
 import { useNavigate } from 'react-router';
-import {Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, Divider, IconButton, List, ListItem, ListItemText,ListSubheader, Stack, TextField, Typography} from "@mui/material"
+import {Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, Divider, Drawer, IconButton, List, ListItem, ListItemText,ListSubheader, Stack, TextField, Typography} from "@mui/material"
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { getToken, getUser, refresh } from '../utilities/LoginService';
+import MyAppBar from './MyAppBar';
+import SideMenu from './SideMenu';
 
 const SetTitle = ({setProjectTitle, nextStage}) => {
 
@@ -421,6 +423,11 @@ const Preview = ({title, admins, milestones, requiredMilestones, previousStage, 
 
 const NewProjectForm = () => {
 
+  const [isDrawerOpen, setDrawer] = useState(false);
+  const toggleDrawer = ()=>{
+    setDrawer(!isDrawerOpen)
+  }
+
   const [user, setLocalUser] = useState(getUser())
   const [stage, setStage] = useState(0);
   const nextStage = ()=>{
@@ -453,6 +460,14 @@ const NewProjectForm = () => {
   return (
     <div>
       <CssBaseline></CssBaseline>
+      <MyAppBar title="New Project" logoutFun={()=>{}} toggleDrawer={toggleDrawer}></MyAppBar>
+      <Drawer
+          anchor={"left"}
+          open={isDrawerOpen}
+          onClose={toggleDrawer}
+        >
+          <SideMenu></SideMenu>
+      </Drawer>
       <Box sx={{margin: 4,
                 display: 'flex',
                 flexDirection: 'column',

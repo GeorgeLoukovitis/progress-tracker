@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import {Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, List, ListItem, ListItemButton, ListItemText, TextField, Typography } from '@mui/material'
+import { Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemText, TextField, Typography } from '@mui/material'
 import DoneIcon from '@mui/icons-material/Done';
+import MyAppBar from './MyAppBar';
 import { getToken } from '../utilities/LoginService';
+import SideMenu from './SideMenu';
 
 
 const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
@@ -215,6 +217,12 @@ const SuccessScreen = () => {
 const AwardMilestones = () => {
 
   const {projectId} = useParams()
+
+  const [isDrawerOpen, setDrawer] = useState(false);
+  const toggleDrawer = ()=>{
+    setDrawer(!isDrawerOpen)
+  }
+
   const [stage, setStage] = useState(0);
   const nextStage = ()=>{
     setStage(stage+1);
@@ -257,7 +265,15 @@ const AwardMilestones = () => {
 
   return (
     <div>
+      <MyAppBar title="Award Milestone" logoutFun={()=>{}} toggleDrawer={toggleDrawer}></MyAppBar>
       <CssBaseline></CssBaseline>
+      <Drawer
+          anchor={"left"}
+          open={isDrawerOpen}
+          onClose={toggleDrawer}
+        >
+          <SideMenu></SideMenu>
+      </Drawer>
       <Box sx={{margin: 4,
                 display: 'flex',
                 flexDirection: 'column',
