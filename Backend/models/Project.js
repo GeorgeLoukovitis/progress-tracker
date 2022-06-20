@@ -30,6 +30,13 @@ const projectSchema = new mongoose.Schema({
       ref:"Milestone",
       required: true
     }
+  ],
+  requiredMilestone: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"Milestone",
+      required: true
+    }
   ]
 
 })

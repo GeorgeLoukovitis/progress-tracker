@@ -278,7 +278,7 @@ app.post("/projects", auth, async (req, res) => {
 
   const uid = req.user.user_id
   // Get user input
-  const { title, admins, usersEnrolled, milestones } = req.body;
+  const { title, admins, usersEnrolled, milestones, requiredMilestones } = req.body;
 
   // Validate user input
   if (!(title && admins)) {
@@ -290,7 +290,8 @@ app.post("/projects", auth, async (req, res) => {
     creator: ObjectId(uid),
     admins : admins.map((admin)=>ObjectId(admin)),
     usersEnrolled: (usersEnrolled)?usersEnrolled.map((uid)=>(ObjectId(uid))):[],
-    milestones: (milestones)?milestones.map((mid)=>(ObjectId(mid))):[]
+    milestones: (milestones)?milestones.map((mid)=>(ObjectId(mid))):[],
+    requiredMilestones: (requiredMilestones)?requiredMilestones.map((rmid)=>(ObjectId(rmid))):[]
   }
   const document = new Project(project)
 
@@ -396,6 +397,7 @@ app.post("/addMilestoneToProject", auth, async (req, res)=>{
   const uid = req.user.user_id
   const mid = req.body.milestoneId
   const pid = req.body.projectId
+  const required = req.body.required
 
   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
     return res.status(500).send({err: "Invalid ID"})
@@ -408,6 +410,8 @@ app.post("/addMilestoneToProject", auth, async (req, res)=>{
   if((uid == project.creator) || project.admins.includes(uid))
   {
     project.milestones.push(ObjectId(mid))
+    if(required)
+      project.requiredMilestones.push(ObjectId(mid))
     const projectResult = await project.save()
     return res.status(201).send({project: projectResult})
   }
