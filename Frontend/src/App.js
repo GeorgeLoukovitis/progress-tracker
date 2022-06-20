@@ -1,5 +1,5 @@
 import  {React, useState, useEffect } from 'react'
-import { BrowserRouter,Routes, Route, Switch, useNavigate } from "react-router-dom";
+import { BrowserRouter,Routes, Route } from "react-router-dom";
 import AllProjects from './components/AllProjects';
 import AwardMilestones from './components/AwardMilestones';
 import Home from './components/Home';

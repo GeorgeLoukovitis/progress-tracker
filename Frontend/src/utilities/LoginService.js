@@ -95,7 +95,6 @@ const refresh = (updateState) => {
     const uid = getUser()._id
     const token = getToken()
     console.log("Refresh user " + uid)
-    console.log(token)
     fetch("http://localhost:8000/users/"+uid,
       {
         mode: "cors",
@@ -127,7 +126,5 @@ const refresh = (updateState) => {
   }
 
 }
-
-
 
 export {login, logout, register, getUser, setUser, refresh, getToken}

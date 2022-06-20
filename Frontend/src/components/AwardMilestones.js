@@ -1,6 +1,6 @@
-import {Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, List, ListItem, ListItemButton, ListItemText, TextField, Typography } from '@mui/material'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import {Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, List, ListItem, ListItemButton, ListItemText, TextField, Typography } from '@mui/material'
 import DoneIcon from '@mui/icons-material/Done';
 import { getToken } from '../utilities/LoginService';
 
@@ -84,9 +84,20 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
 }
 
 const SelectUser = ({previousStage, nextStage, setUserIds})=> {
+  const {projectId} = useParams()
   const [users, setUsers] = useState([])
   useEffect(()=>{
-    fetch("http://localhost:8000/users/")
+    
+    fetch("http://localhost:8000/enrolledUsers/"+projectId,
+    {
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
       .then((res)=>{
         if(res.ok)
         {
@@ -94,7 +105,6 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
         }
       })
       .then((data)=>{
-        // console.log(data)
         setUsers(data)
       })
   },[])

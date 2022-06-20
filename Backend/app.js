@@ -460,6 +460,23 @@ app.post("/addAdminToProject", auth, async (req, res)=>{
 
 })
 
+app.get("/enrolledUsers/:pid", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  const pid = req.params.pid
+
+  const project = await Project.findById(pid).populate("usersEnrolled")
+  if((uid == project.creator) || project.admins.includes(uid))
+  {
+    
+    return res.status(201).send(project.usersEnrolled)
+  }
+  else
+  {
+    return res.status(500).send({err: "Your are not an admin"})
+  }
+
+})
+
 app.get("/joinedProjects", auth, async (req, res)=>{
   const uid = req.user.user_id
   if(ObjectId(uid))

@@ -1,21 +1,12 @@
 import { getToken, getUser, setUser } from "./LoginService";
 
 const isMilestoneAchieved = (usr,milestone)=>{
-  // const userProjectIds = usr.projectsEnrolled.map((p)=>(p.projectId))
-  // if(!userProjectIds.includes(projectId))
-  //   return false;
-  // const currentProject = usr.projectsEnrolled.filter((p)=>(p.projectId==projectId))[0]
-  // return currentProject.milestonesAchieved.includes(milestone.name)
-
   return usr.milestones.includes(milestone._id)
 
 }
 
 const isEnrolled = (usr,pid) => {
-  console.log("isEnrolled-usr")
-  console.log(usr)
   const projectIds = usr.projectsJoined
-  console.log(projectIds)
   return projectIds.includes(pid)
 }
 

@@ -1,10 +1,8 @@
 import {React, useState, useEffect} from 'react'
 import { useNavigate } from "react-router-dom";
-import MyAppBar from './MyAppBar'
-import Button from '@mui/material/Button';
-import Drawer from '@mui/material/Drawer';
+import {Box, Button, Card, CardContent, CssBaseline, Drawer, List, ListItem, ListItemText, ListSubheader, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import {Box, Card, CardContent, CssBaseline, List, ListItem, ListItemText, ListSubheader, Stack } from '@mui/material';
+import MyAppBar from './MyAppBar'
 import SideMenu from './SideMenu';
 import { getToken, getUser, refresh } from '../utilities/LoginService';
 
