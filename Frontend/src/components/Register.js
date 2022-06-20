@@ -12,7 +12,7 @@ const Register = ({loginFun, switchToLogin}) => {
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    register(data.get("username"), data.get("password"), loginFun);
+    register(data.get("firstName"), data.get("lastName"), data.get("email"), data.get("password"), loginFun);
   };
 
   return (
@@ -38,10 +38,28 @@ const Register = ({loginFun, switchToLogin}) => {
               margin="normal"
               required
               fullWidth
-              id="username"
-              label="Username"
-              name="username"
-              autoComplete="username"
+              id="firstName"
+              label="First Name"
+              name="firstName"
+              autoFocus
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="lastName"
+              label="Last Name"
+              name="lastName"
+              autoFocus
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email"
+              name="email"
+              autoComplete="email"
               autoFocus
             />
             <TextField

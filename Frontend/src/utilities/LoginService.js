@@ -40,7 +40,7 @@ const logout = () => {
   localStorage.removeItem("token")
 }
 
-const register = (email, password, updateState) => {
+const register = (firstName, lastName, email, password, updateState) => {
   fetch("http://localhost:8000/register",
     {
       mode: "cors",
@@ -49,7 +49,7 @@ const register = (email, password, updateState) => {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({email, password, firstName:"George", lastName:"Loukovitis"})
+      body: JSON.stringify({email, password, firstName, lastName})
     })
     .then((res)=>{
       if(res.ok)
