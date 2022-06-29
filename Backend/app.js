@@ -122,11 +122,12 @@ app.post("/login", async (req, res)=>{
   }
 });
 
-app.get("/",auth, async (req, res)=>{
-  console.log(req.user)
-  const user = await User.findById(req.user.user_id)
-  console.log(user)
-  res.send(user)
+app.get("/", async (req, res)=>{
+  const id = ObjectId("62b0b6d47d0e8421534caf0d").valueOf()
+  const num_id = parseInt(id, 16)
+  console.log(id)
+  console.log(num_id)
+  return res.status(200).send(id)
 })
 
 
