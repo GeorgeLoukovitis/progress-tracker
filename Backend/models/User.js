@@ -19,9 +19,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  milestones: [{
+  achievements: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Milestone",
+    ref: "Achievement",
     required: true
   }],
   projectsJoined: [

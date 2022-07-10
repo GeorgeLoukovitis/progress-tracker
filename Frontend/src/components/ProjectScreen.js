@@ -14,6 +14,8 @@ const ProjectScreen = () => {
   const [user, setLocalUser] = useState(getUser())
   const [project, setProject] = useState(null)
 
+  console.log(user);
+
   useEffect(()=>{
     refresh(setLocalUser)
     fetch("http://localhost:8000/projects/"+projectId,{

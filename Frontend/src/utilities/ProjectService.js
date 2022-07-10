@@ -1,7 +1,7 @@
 import { getToken, setUser } from "./LoginService";
 
 const isMilestoneAchieved = (usr,milestone)=>{
-  return usr.milestones.includes(milestone._id)
+  return usr.achievements.map((a)=>(a.milestone)).includes(milestone._id)
 
 }
 

@@ -10,6 +10,7 @@ const bcrypt = require("bcryptjs")
 const cors = require("cors")
 const env = require("dotenv").config()
 const auth = require("./middleware/auth");
+const Achievement = require("./models/Achievement")
 
 console.log(env)
 
@@ -96,7 +97,7 @@ app.post("/login", async (req, res)=>{
     return res.status(400).send("All input is required");
   }
   // Validate if user exist in our database
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).populate("achievements");
 
   if (user && (await bcrypt.compare(password, user.password))) {
     // Create token
@@ -113,7 +114,7 @@ app.post("/login", async (req, res)=>{
       ...user._doc,
       token
     }
-
+    console.log(result)
     // user
     return res.status(200).json(result);
   }
@@ -214,7 +215,7 @@ app.get("/users/:id", auth, (req, res)=>{
   
   const id = req.params.id
   if (ObjectId.isValid(id)){
-    User.findById(id)
+    User.findById(id).populate("achievements")
       .then(result=>{
         if(req.user.user_id == id)
         {
@@ -225,7 +226,7 @@ app.get("/users/:id", auth, (req, res)=>{
           res.status(200).send({
             firstName: result.firstName,
             lastName: result.lastName,
-            milestones: result.milestones
+            achievements: result.milestones
           })
         }
       })
@@ -234,15 +235,6 @@ app.get("/users/:id", auth, (req, res)=>{
   else {
     return res.status(500).send({err: "Invalid ID"})
   }
-})
-
-app.post("/users", (req, res)=> {
-  const user = req.body
-  const document = new User(user)
-
-  document.save()
-    .then(result=>{res.status(201).send({dbResponse: result, object: document})})
-    .catch(err=>res.status(500).send({err: `Error: ${err}`}))
 })
 
 app.delete("/users/:id", (req, res)=>{
@@ -318,21 +310,6 @@ app.post("/projects", auth, async (req, res) => {
   return res.status(201).send(result)
 })
 
-app.delete("/projects/:id", (req, res)=>{
-  const id = req.params.id
-  console.log(id)
-
-  if(ObjectId.isValid(id))
-  {
-    Project.findByIdAndDelete(id)
-      .then(result=>res.status(200).json(result))
-      .catch(err=>res.status(500).send({error: err}))
-  }
-  else {
-    return res.status(500).send({err: "Invalid ID"})
-  }
-})
-
 app.post("/enrollToProject", auth, async (req, res)=>{
   const uid = req.user.user_id
   const pid = req.body.projectId
@@ -359,7 +336,10 @@ app.post("/enrollToProject", auth, async (req, res)=>{
 app.post("/awardMilestone", auth, async (req, res)=>{
   const uid = req.user.user_id
   const mid = req.body.milestoneId
-  const awardTo = req.body.userIds
+  const awardTo = req.body.userId
+  const support = req.body.support
+  const data = req.body.data
+
 
   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid)))
   {
@@ -379,16 +359,35 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   const project = await Project.findById(pid)
   if((uid == project.creator) || project.admins.includes(uid))
   {
-    for(const usrId of awardTo)
+    const usr = await User.findById(awardTo)
+    if(usr.projectsJoined.includes(ObjectId(pid)))
     {
-      const usr = await User.findById(usrId)
-      if(usr.projectsJoined.includes(ObjectId(pid)))
-      {
-        usr.milestones.push(ObjectId(mid))
-        await usr.save()
-      }
+      // ===========================
+      // TO-DO
+
+      const achievement = new Achievement(
+        {
+          milestone: mid,
+          user: awardTo,
+          data: data,
+          support: (support)?support.map((p)=>(ObjectId(p))):[]
+        }
+      )
+
+      const achievementSaved = await achievement.save()
+      console.log(achievementSaved)
+
+      usr.achievements.push(achievementSaved._id)
+      const usrSaved = await usr.save()
+      console.log(usrSaved);
+      // ===========================
+      return res.status(201).send({result: "ok"})
     }
-    return res.status(201).send({result: "ok"})
+    else
+    {
+      return res.status(500).send({result: "The users hasn't joined this project"})
+    }
+    
   }
   else
   {
@@ -464,7 +463,13 @@ app.get("/enrolledUsers/:pid", auth, async (req, res)=>{
   const uid = req.user.user_id
   const pid = req.params.pid
 
-  const project = await Project.findById(pid).populate("usersEnrolled")
+  const project = await Project.findById(pid).populate({
+    path : 'usersEnrolled',
+    populate : {
+      path : 'achievements'
+    }
+  })
+  console.log(project)
   if((uid == project.creator) || project.admins.includes(uid))
   {
     

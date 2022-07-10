@@ -4,10 +4,11 @@ import { Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBasel
 import DoneIcon from '@mui/icons-material/Done';
 import MyAppBar from './MyAppBar';
 import { getToken } from '../utilities/LoginService';
+import {isMilestoneAchieved} from "../utilities/ProjectService"
 import SideMenu from './SideMenu';
 
 
-const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
+const SelectMilestone = ({previousStage, nextStage, setMilestoneToAward, projectId, userToAward}) => {
 
   const [project, setProject] = useState(null)
   useEffect(()=>{
@@ -34,7 +35,6 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
     })
   },[projectId,])
   
-  const navigate = useNavigate()
   const [milestone, setMilestone] = useState("")
 
   return (
@@ -45,7 +45,7 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
         </Typography>
         {(project)?
         <List>
-          {project.milestones.map((val=>(
+          {project.milestones.filter((m)=>(!isMilestoneAchieved(userToAward, m))).map((val=>(
             <ListItem key={val._id} secondaryAction={
               <Checkbox checked={milestone===val}></Checkbox>
             }>
@@ -63,7 +63,7 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
           variant="contained"
           sx={{ mb: 2 }}
           onClick={()=>{
-            navigate("/manage-projects")
+            previousStage()
           }}
         >
           Previous
@@ -85,7 +85,7 @@ const SelectMilestone = ({nextStage, setMilestoneToAward, projectId}) => {
   )
 }
 
-const SelectUser = ({previousStage, nextStage, setUserIds})=> {
+const SelectUser = ({previousStage, nextStage, setUserToAward})=> {
   const {projectId} = useParams()
   const [users, setUsers] = useState([])
   useEffect(()=>{
@@ -111,7 +111,8 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
       })
   },[projectId,])
   
-  const [usersToAward, setUsersToAward] = useState([]) 
+  const navigate = useNavigate()
+  const [selectedUser, setSelectedUser] = useState({_id:0}) 
   const [searchTerm, setSearchTerm] = useState("")
 
   return (
@@ -133,21 +134,122 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
         <List>
           {users.filter((u)=>(u.username.includes(searchTerm))).map((val=>(
             <ListItem key={val._id} secondaryAction={
-              <Checkbox checked={usersToAward.includes(val._id)}></Checkbox>
+              <Checkbox checked={selectedUser._id === val._id}></Checkbox>
             }>
               <ListItemButton onClick={()=>{
-                if(usersToAward.includes(val._id))
+                if(selectedUser._id === val._id)
                 {
                   console.log("Remove")
-                  setUsersToAward(usersToAward.filter(u=>(u!==val._id)))
+                  setSelectedUser(null)
                 }
                 else
                 {
                   console.log("Add")
-                  setUsersToAward([...usersToAward, val._id])
+                  setSelectedUser(val)
                 }
               }}>
                 <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
+              </ListItemButton>
+            </ListItem>
+          )))}
+        </List>
+      </CardContent>
+      <CardActions>
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ mb: 2 }}
+          onClick={()=>{
+            navigate("/manage-projects")
+          }}
+        >
+          Previous
+        </Button>
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ mb: 2 }}
+          onClick={()=>{
+            setUserToAward(selectedUser)
+            nextStage()
+          }}
+        >
+          Next
+        </Button>
+      </CardActions>
+      
+    </Card>
+  )
+}
+
+const SelectSupport = ({previousStage, nextStage, setAwardSupport, userToAward}) => {
+
+  const {projectId} = useParams();
+  const [milestones, setMilestones] = useState([])
+
+  useEffect(()=>{
+    fetch("http://localhost:8000/projects/"+projectId,{
+      mode: "cors",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": getToken(), 
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+    .then((res)=>{
+      if(res.ok)
+      {
+        return res.json()
+      }
+      else{
+        throw Error()
+      }
+    })
+    .then((data)=>{
+      console.log("Project")
+      console.log(data)
+      setMilestones(data.milestones)
+    })
+  }, [projectId,])
+
+  const [support, setSupport] = useState([]) 
+  const [searchTerm, setSearchTerm] = useState("")
+
+  return (
+    <Card sx={{width:500}}>
+      <CardContent>
+        <Typography component="h1" variant="h5">
+          Why is the User Awarded
+        </Typography>
+        <TextField
+          margin="normal"
+          fullWidth
+          id="Search Bar"
+          label="Search"
+          name="search-bar"
+          value = {searchTerm}
+          onChange={(e)=>{setSearchTerm(e.target.value)}}
+          autoFocus
+        />
+        <List>
+          {milestones.filter((m)=>(m.name.includes(searchTerm) && isMilestoneAchieved(userToAward, m))).map((val=>(
+            <ListItem key={val._id} secondaryAction={
+              <Checkbox checked={support.includes(val._id)}></Checkbox>
+            }>
+              <ListItemButton onClick={()=>{
+                if(support.includes(val._id))
+                {
+                  console.log("Remove")
+                  setSupport(support.filter(m=>(m!==val._id)))
+                }
+                else
+                {
+                  console.log("Add")
+                  setSupport([...support, val._id])
+                }
+              }}>
+                <ListItemText primary={val.name} secondary={"#"+val._id}></ListItemText>
               </ListItemButton>
             </ListItem>
           )))}
@@ -169,7 +271,7 @@ const SelectUser = ({previousStage, nextStage, setUserIds})=> {
           variant="contained"
           sx={{ mb: 2 }}
           onClick={()=>{
-            setUserIds(usersToAward)
+            setAwardSupport(support)
             nextStage()
           }}
         >
@@ -232,7 +334,7 @@ const AwardMilestones = () => {
   const awardUsers = () => {
     console.log("Award")
     console.log(milestoneToAward)
-    console.log(userIds)
+    console.log(userToAward)
     fetch("http://localhost:8000/awardMilestone/",
     {
       mode: "cors",
@@ -242,19 +344,22 @@ const AwardMilestones = () => {
         "x-access-token": getToken(), 
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({milestoneId:milestoneToAward._id, userIds})
+      body: JSON.stringify({milestoneId:milestoneToAward._id, userId: userToAward._id, data: "", support: awardSupport})
     })
   }
 
-  const [userIds, setUserIds] = useState([])
+  const [userToAward, setUserToAward] = useState(null)
   const [milestoneToAward, setMilestoneToAward] = useState(null)
+  const [awardSupport, setAwardSupport] = useState([])
   
   const showForm = (s,previousStage, nextStage, setMilestoneToAward)=>{
     if(s === 0)
-      return (<SelectMilestone nextStage={nextStage} setMilestoneToAward={setMilestoneToAward} projectId={projectId}></SelectMilestone>)
+      return (<SelectUser nextStage={nextStage} setUserToAward={setUserToAward}></SelectUser>)
     else if(s === 1)
-      return (<SelectUser previousStage={previousStage} nextStage={nextStage} setUserIds={setUserIds}></SelectUser>)
-    else if(s === 2)
+      return (<SelectMilestone previousStage={previousStage} nextStage={nextStage} setMilestoneToAward={setMilestoneToAward} projectId={projectId} userToAward={userToAward}></SelectMilestone>)
+    else if(s ===2)
+      return (<SelectSupport previousStage={previousStage} nextStage={nextStage} setAwardSupport={setAwardSupport} userToAward={userToAward}></SelectSupport>)
+    else if(s === 3)
     {
       awardUsers()
       return (<SuccessScreen></SuccessScreen>)
