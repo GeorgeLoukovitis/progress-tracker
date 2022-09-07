@@ -18,7 +18,10 @@ const achievementSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Milestone",
     required: true
-  }]
+  }],
+  cardanoTx: {
+    type: String
+  }
 })
 
 const Achievement = mongoose.model("Achievement", achievementSchema)

@@ -11,8 +11,10 @@ const cors = require("cors")
 const env = require("dotenv").config()
 const auth = require("./middleware/auth");
 const Achievement = require("./models/Achievement")
+const cardano = require("./services/cardanoWrapper")
 
-console.log(env)
+console.log("Environment: ")
+console.log(env.parsed)
 
 // Create EXPRESS app
 const app = express()
@@ -20,6 +22,15 @@ app.use(express.json())
 app.use(morgan("dev"))
 app.use(cors())
 let server;
+let wallet;
+if(process.env.BLOCKCHAIN === "cardano")
+{
+  cardano.getWallet().then((data)=>{
+    wallet = data
+    console.log("Balance:")
+    console.log(wallet.balance)
+  })
+}
 
 mongoose.connect(process.env.REMOTE_DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 })
   .then((connection)=>{
@@ -53,6 +64,8 @@ app.post("/register", async (req, res) => {
   //Encrypt user password
   encryptedUserPassword = await bcrypt.hash(password, 10);
 
+  const cardanoAddress = await cardano.createUserAddress(firstName+lastName);
+
   // Create user in our database
   let user = await User.create({
     username : firstName + lastName,
@@ -60,6 +73,7 @@ app.post("/register", async (req, res) => {
     lastName: lastName,
     email: email.toLowerCase(), // sanitize
     password: encryptedUserPassword,
+    cardanoAddress: cardanoAddress
   });
 
   console.log("User")
@@ -124,6 +138,12 @@ app.post("/login", async (req, res)=>{
 });
 
 app.get("/", async (req, res)=>{
+
+  let wallet = await cardano.getWallet();
+  console.log(wallet.getAvailableBalance());
+  let transactions = await wallet.getTransactions();
+  console.log(transactions)
+
   const id = ObjectId("62b0b6d47d0e8421534caf0d").valueOf()
   const num_id = parseInt(id, 16)
   console.log(id)
@@ -360,8 +380,23 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   if((uid == project.creator) || project.admins.includes(uid))
   {
     const usr = await User.findById(awardTo)
+    const authority = await User.findById(uid)
+
     if(usr.projectsJoined.includes(ObjectId(pid)))
     {
+      const metadata = [authority.firstName + authority.lastName, uid, project.title, milestone.name, mid, data, support]
+      // const metadata = {
+      //   0: {
+      //     "milestone": project.title + "-" + milestone.name,
+      //     "issuer": authority.firstName + authority.lastName + "-" + authority.cardanoAddress,
+      //     "milestoneId": mid,
+      //     "data": data,
+      //     "support": support
+
+      //   }
+      // }
+      const txId = await cardano.saveMetadata(wallet, metadata, usr.cardanoAddress)
+      
       // ===========================
       // TO-DO
 
@@ -370,7 +405,8 @@ app.post("/awardMilestone", auth, async (req, res)=>{
           milestone: mid,
           user: awardTo,
           data: data,
-          support: (support)?support.map((p)=>(ObjectId(p))):[]
+          support: (support)?support.map((p)=>(ObjectId(p))):[],
+          cardanoTx: txId
         }
       )
 
@@ -381,6 +417,8 @@ app.post("/awardMilestone", auth, async (req, res)=>{
       const usrSaved = await usr.save()
       console.log(usrSaved);
       // ===========================
+
+
       return res.status(201).send({result: "ok"})
     }
     else

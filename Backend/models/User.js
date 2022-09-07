@@ -19,6 +19,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  ethereumAddress: {
+    type: String,
+    required: false
+  },
+  cardanoAddress: {
+    type: String,
+    required: false
+  },
   achievements: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Achievement",
