@@ -8,6 +8,7 @@ const SideMenu = () => {
   const routes = [
     {name: "Home", route:"/"},
     {name: "My Projects", route:"/manage-projects"},
+    {name: "My Achievements", route:"/achievements"},
     {name: "Create a Project", route:"/create-project"},
   ]
   return (

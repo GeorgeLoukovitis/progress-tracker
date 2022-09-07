@@ -1,6 +1,10 @@
 const mongoose = require("mongoose")
 
 const achievementSchema = new mongoose.Schema({
+  milestoneName:{
+    type: String,
+    required: true
+  },
   milestone:{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Milestone",

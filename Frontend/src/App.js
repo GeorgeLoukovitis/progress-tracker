@@ -9,6 +9,7 @@ import MyProjects from './components/MyProjects';
 import NewProjectForm from './components/NewProjectForm';
 import ProjectScreen from './components/ProjectScreen';
 import Register from './components/Register';
+import MyAchievements from "./components/MyAchievements"
 import { refresh } from './utilities/LoginService';
 
 const App = () => {
@@ -58,6 +59,9 @@ const App = () => {
         }/>
         <Route exact path="/award-milestones/:projectId" element={
           <AwardMilestones></AwardMilestones>
+        }/>
+        <Route exact path="/achievements" element={
+          <MyAchievements></MyAchievements>
         }/>
       </Routes>
     </BrowserRouter>

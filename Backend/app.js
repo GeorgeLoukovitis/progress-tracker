@@ -398,10 +398,9 @@ app.post("/awardMilestone", auth, async (req, res)=>{
       const txId = await cardano.saveMetadata(wallet, metadata, usr.cardanoAddress)
       
       // ===========================
-      // TO-DO
-
       const achievement = new Achievement(
         {
+          milestoneName: project.title + " - " + milestone.name,
           milestone: mid,
           user: awardTo,
           data: data,
@@ -526,6 +525,27 @@ app.get("/joinedProjects", auth, async (req, res)=>{
   {
     const user = await User.findById(uid).populate("projectsJoined")
     return res.status(200).send(user.projectsJoined)
+  }
+  else
+  {
+    return res.status(500).send({err: "Invalid Id"})
+  }
+})
+
+app.get("/achievements", auth, async (req, res)=>{
+  const uid = req.user.user_id
+  if(ObjectId(uid))
+  {
+    const user = await User.findById(uid).populate("achievements")
+    let achievements = user.achievements.filter(async (achievement)=> {
+      const metadata = await cardano.getMetadata(wallet, achievement.cardanoTx)
+      const metadataObj = cardano.metadataToObject(metadata)
+      console.log(metadataObj)
+      const receiverAddress = await cardano.getTxReceivingAddress(wallet, achievement.cardanoTx)
+      console.log(receiverAddress)
+      return (achievement.milestone == metadataObj.mid) && (user.cardanoAddress == receiverAddress)
+    })
+    return res.status(200).send(achievements)
   }
   else
   {
