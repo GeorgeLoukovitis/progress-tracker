@@ -283,6 +283,56 @@ const SelectSupport = ({previousStage, nextStage, setAwardSupport, userToAward})
   )
 }
 
+const SetData = ({setAwardData, previousStage, nextStage}) => {
+
+  const [data, setData] = useState("")
+
+  return (
+    <Card sx={{width:500}}>
+      <CardContent>
+        <Typography component="h1" variant="h5">
+          Enter achievement comments
+        </Typography>
+        <TextField
+          margin="normal"
+          fullWidth
+          id="Project Title"
+          label="Project Title"
+          name="title"
+          autoComplete="Title 1"
+          value = {data}
+          onChange={(e)=>{setData(e.target.value)}}
+          autoFocus
+        />
+      </CardContent>
+      <CardActions>
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ mb: 2 }}
+          onClick={()=>{
+            previousStage()
+          }}
+        >
+          Previous
+        </Button>
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ mb: 2 }}
+          onClick={()=>{
+            setAwardData(data)
+            nextStage()
+          }}
+        >
+          Next
+        </Button>
+      </CardActions>
+      
+    </Card>
+  )
+}
+
 const SuccessScreen = () => {
 
   const navigate = useNavigate()
@@ -344,13 +394,14 @@ const AwardMilestones = () => {
         "x-access-token": getToken(), 
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({milestoneId:milestoneToAward._id, userId: userToAward._id, data: "", support: awardSupport})
+      body: JSON.stringify({milestoneId:milestoneToAward._id, userId: userToAward._id, data: awardData, support: awardSupport})
     })
   }
 
   const [userToAward, setUserToAward] = useState(null)
   const [milestoneToAward, setMilestoneToAward] = useState(null)
   const [awardSupport, setAwardSupport] = useState([])
+  const [awardData, setAwardData] = useState("")
   
   const showForm = (s,previousStage, nextStage, setMilestoneToAward)=>{
     if(s === 0)
@@ -359,7 +410,9 @@ const AwardMilestones = () => {
       return (<SelectMilestone previousStage={previousStage} nextStage={nextStage} setMilestoneToAward={setMilestoneToAward} projectId={projectId} userToAward={userToAward}></SelectMilestone>)
     else if(s ===2)
       return (<SelectSupport previousStage={previousStage} nextStage={nextStage} setAwardSupport={setAwardSupport} userToAward={userToAward}></SelectSupport>)
-    else if(s === 3)
+    else if(s ===3)
+      return (<SetData previousStage={previousStage} nextStage={nextStage} setAwardData={setAwardData}></SetData>)
+    else if(s === 4)
     {
       awardUsers()
       return (<SuccessScreen></SuccessScreen>)

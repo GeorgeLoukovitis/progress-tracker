@@ -4,14 +4,18 @@ const {ObjectId, ServerApiVersion} = require("mongodb")
 const User = require("./models/User")
 const Project = require("./models/Project")
 const Milestone = require("./models/Milestone")
+const Achievement = require("./models/Achievement")
 const morgan = require("morgan")
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcryptjs")
 const cors = require("cors")
 const env = require("dotenv").config()
 const auth = require("./middleware/auth");
-const Achievement = require("./models/Achievement")
 const cardano = require("./services/cardanoWrapper")
+const ethereum = require("./services/ethereumWrapper")
+const {sha256} = require("js-sha256")
+const { BigNumber, utils } = require("ethers")
+
 
 console.log("Environment: ")
 console.log(env.parsed)
@@ -22,13 +26,26 @@ app.use(express.json())
 app.use(morgan("dev"))
 app.use(cors())
 let server;
-let wallet;
-if(process.env.BLOCKCHAIN === "cardano")
+let cardanoWallet;
+let ethereumProvider, ethereumWallet, ethereumContract;
+const cardanoEnabled = (process.env.CARDANO === "enabled")?true:false;
+const ethereumEnabled = (process.env.ETHEREUM === "enabled")?true:false;
+
+if(cardanoEnabled)
 {
   cardano.getWallet().then((data)=>{
-    wallet = data
+    cardanoWallet = data
     console.log("Balance:")
-    console.log(wallet.balance)
+    console.log(cardanoWallet.balance)
+  })
+}
+
+if(ethereumEnabled)
+{
+  ethereumProvider = ethereum.getProvider()
+  ethereum.getContract(process.env.CONTRACT_ADDRESS, ethereumProvider).then((data)=> {
+    ethereumContract = data
+    // console.log(ethereumContract)
   })
 }
 
@@ -44,8 +61,6 @@ app.post("/register", async (req, res) => {
 
   // Get user input
   const { firstName, lastName, email, password } = req.body;
-  console.log("Body")
-  console.log(req.body)
 
   // Validate user input
   if (!(email && password && firstName && lastName)) {
@@ -54,41 +69,51 @@ app.post("/register", async (req, res) => {
 
   // check if user already exist
   // Validate if user exist in our database
-  const oldUser = await User.findOne({ email: email });
-
-  if (oldUser) {
+  const checkEmail = await User.findOne({ email: email });
+  if (checkEmail) {
+    console.log("User Already Exist. Please Login")
+    return res.status(409).send("User Already Exist. Please Login");
+  }
+  
+  const username = firstName+lastName
+  const checkUsername = await User.findOne({ username: username });
+  if (checkUsername) {
     console.log("User Already Exist. Please Login")
     return res.status(409).send("User Already Exist. Please Login");
   }
 
   //Encrypt user password
   encryptedUserPassword = await bcrypt.hash(password, 10);
-
-  const cardanoAddress = await cardano.createUserAddress(firstName+lastName);
-
-  // Create user in our database
-  let user = await User.create({
-    username : firstName + lastName,
+  
+  let tempUser = {
+    username : username,
     firstName: firstName,
     lastName: lastName,
     email: email.toLowerCase(), // sanitize
     password: encryptedUserPassword,
-    cardanoAddress: cardanoAddress
-  });
+  }
+  
+  if(cardanoEnabled)
+    tempUser.cardanoAddress = await cardano.createUserAddress(username)
+  
+  if(ethereumEnabled)
+  {
+    const userWallet = ethereum.newWallet(username, ethereumProvider)
+    await ethereum.fundWallet(userWallet, ethereumProvider)
+    tempUser.ethereumAddress = userWallet.address
+  }
 
-  console.log("User")
-  console.log(user)
+  // Create user in our database
+  let user = await User.create(tempUser);
 
   // Create token
   const token = jwt.sign(
-    { user_id: user._id, email },
+    { user_id: user._id, username },
     process.env.TOKEN_KEY,
     {
       expiresIn: "5h",
     }
   );
-  // save user token
-  // user.token = token;
 
   let loggedUser = await User.findById(user._id)
   result = {
@@ -116,7 +141,7 @@ app.post("/login", async (req, res)=>{
   if (user && (await bcrypt.compare(password, user.password))) {
     // Create token
     const token = jwt.sign(
-      { user_id: user._id, email },
+      { user_id: user._id, username: user.username },
       process.env.TOKEN_KEY,
       {
         expiresIn: "5h",
@@ -172,7 +197,8 @@ app.get("/milestones/:id", (req, res)=>{
   }
 })
 
-app.post("/milestones", (req, res)=>{
+app.post("/milestones", auth, async (req, res)=>{
+  const uid = req.user.user_id
   const milestone = req.body
   const {name, prerequisites} = milestone
 
@@ -181,16 +207,37 @@ app.post("/milestones", (req, res)=>{
     return res.status(400).send("All input is required");
   }
 
+  const creator = await User.findById(uid)
   const document = new Milestone(
     {
       name,
       prerequisites: (prerequisites)?prerequisites.map((p)=>(ObjectId(p))):[]
     }
   )
-  console.log(document)
-  document.save()
-    .then(result=>res.status(201).send(result))
-    .catch(err=>res.status(500).send({error: err}))
+  const result = await document.save()
+  console.log("Result:")
+  console.log(result)
+
+  if(ethereumEnabled && creator.ethereumAddress)
+  {
+    const mid = result._id
+    const userWallet = ethereum.getWallet(creator.username, ethereumProvider)
+    const userContract = ethereumContract.connect(userWallet);
+    let blockchainResult = await userContract.createMilestone(BigNumber.from("0x"+ mid.toString()))
+    console.log("Milestone: " + BigNumber.from("0x"+mid.toString()))
+    console.log("isAdmin: " + creator.ethereumAddress)
+    console.log(await userContract.isAdmin(creator.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+
+    for(let milestonePrerequisite of prerequisites)
+    {
+      blockchainResult = await userContract.addMilestonePrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString()))
+      // console.log(blockchainResult)
+      console.log("isPrerequisite: " + milestonePrerequisite.toString())
+      console.log(await userContract.hasPrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString())))
+    }
+  }
+
+  return res.status(201).send(result);
 })
 
 app.delete("/milestones/:id", auth, async (req, res)=>{
@@ -307,6 +354,8 @@ app.post("/projects", auth, async (req, res) => {
     return res.status(400).send("All input is required");
   }
 
+  const creator = await User.findById(uid)
+
   const project = {
     title,
     creator: ObjectId(uid),
@@ -316,15 +365,34 @@ app.post("/projects", auth, async (req, res) => {
     requiredMilestones: (requiredMilestones)?requiredMilestones.map((rmid)=>(ObjectId(rmid))):[]
   }
   const document = new Project(project)
-
   const result = await document.save()
-  for(mid of milestones){
+  const projectAdmins = (await Project.findById(result._id).populate("admins")).admins
+
+  for(let mid of milestones){
     if(ObjectId.isValid(mid))
     {
       const milestone = await Milestone.findById(mid)
       milestone.assosiatedProject = result._id
       const milestoneResult = await milestone.save()
-      console.log(milestoneResult)
+
+      if(ethereumEnabled && creator.ethereumAddress)
+      {
+        const userWallet = ethereum.getWallet(req.user.username, ethereumProvider)
+        const userContract = ethereumContract.connect(userWallet);
+        // let blockchainResult = await userContract.createMilestone(BigNumber.from("0x"+mid.toString()))
+        for(let projectAdmin of projectAdmins)
+        {
+          if(projectAdmin.ethereumAddress)
+          {
+            blockchainResult = await userContract.addMilestoneAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString()))
+            console.log("isAdmin: " + projectAdmin.ethereumAddress)
+            console.log(await userContract.isAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+          }
+        }
+
+        // for(let milestonePrerequisite of milestone.prerequisites)
+        //   blockchainResult = await userContract.addMilestonePrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString()))
+      }
     }
   }
   return res.status(201).send(result)
@@ -360,6 +428,10 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   const support = req.body.support
   const data = req.body.data
 
+  console.log("Data:")
+  console.log(data)
+  console.log(sha256(data))
+
 
   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid)))
   {
@@ -384,39 +456,45 @@ app.post("/awardMilestone", auth, async (req, res)=>{
 
     if(usr.projectsJoined.includes(ObjectId(pid)))
     {
-      const metadata = [authority.firstName + authority.lastName, uid, project.title, milestone.name, mid, data, support]
-      // const metadata = {
-      //   0: {
-      //     "milestone": project.title + "-" + milestone.name,
-      //     "issuer": authority.firstName + authority.lastName + "-" + authority.cardanoAddress,
-      //     "milestoneId": mid,
-      //     "data": data,
-      //     "support": support
+      let tempAchievement = {
+        milestoneName: project.title + " - " + milestone.name,
+        milestone: mid,
+        user: awardTo,
+        data: data,
+        support: (support)?support.map((p)=>(ObjectId(p))):[]
+      }
+      const dataHash = sha256(data)
 
-      //   }
-      // }
-      const txId = await cardano.saveMetadata(wallet, metadata, usr.cardanoAddress)
-      
-      // ===========================
-      const achievement = new Achievement(
+      if(cardanoEnabled && usr.cardanoAddress)
+      {
+        const metadata = [authority.firstName + authority.lastName, uid, project.title, milestone.name, mid, dataHash, support]
+        const txId = await cardano.saveMetadata(cardanoWallet, metadata, usr.cardanoAddress)
+        tempAchievemt.cardanoTx = txId
+      }
+
+      if(ethereumEnabled && authority.ethereumAddress && usr.ethereumAddress)
+      {
+        const userWallet = ethereum.getWallet(req.user.username, ethereumProvider)
+        const userContract = ethereumContract.connect(userWallet);
+        console.log(usr.ethereumAddress)
+        console.log(BigNumber.from("0x"+mid.toString()))
+        console.log(data)
+        let blockchainResult = await userContract.awardMilestone(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), dataHash)
+        // console.log(blockchainResult)
+        for(let supportMilestone of support)
         {
-          milestoneName: project.title + " - " + milestone.name,
-          milestone: mid,
-          user: awardTo,
-          data: data,
-          support: (support)?support.map((p)=>(ObjectId(p))):[],
-          cardanoTx: txId
+          blockchainResult = await userContract.addSupportItem(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+supportMilestone.toString()))
         }
-      )
+      }
 
+
+      const achievement = new Achievement(tempAchievement)
       const achievementSaved = await achievement.save()
       console.log(achievementSaved)
 
       usr.achievements.push(achievementSaved._id)
       const usrSaved = await usr.save()
-      console.log(usrSaved);
-      // ===========================
-
+      // console.log(usrSaved);
 
       return res.status(201).send({result: "ok"})
     }
@@ -537,14 +615,18 @@ app.get("/achievements", auth, async (req, res)=>{
   if(ObjectId(uid))
   {
     const user = await User.findById(uid).populate("achievements")
-    let achievements = user.achievements.filter(async (achievement)=> {
-      const metadata = await cardano.getMetadata(wallet, achievement.cardanoTx)
-      const metadataObj = cardano.metadataToObject(metadata)
-      console.log(metadataObj)
-      const receiverAddress = await cardano.getTxReceivingAddress(wallet, achievement.cardanoTx)
-      console.log(receiverAddress)
-      return (achievement.milestone == metadataObj.mid) && (user.cardanoAddress == receiverAddress)
-    })
+    let achievements = [];
+    if(cardanoEnabled)
+    {
+      achievements = user.achievements.filter(async (achievement)=> {
+        const metadata = await cardano.getMetadata(cardanoWallet, achievement.cardanoTx)
+        const metadataObj = cardano.metadataToObject(metadata)
+        console.log(metadataObj)
+        const receiverAddress = await cardano.getTxReceivingAddress(cardanoWallet, achievement.cardanoTx)
+        console.log(receiverAddress)
+        return (achievement.milestone == metadataObj.mid) && (user.cardanoAddress == receiverAddress)
+      })
+    }
     return res.status(200).send(achievements)
   }
   else

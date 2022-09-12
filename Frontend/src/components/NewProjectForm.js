@@ -155,7 +155,10 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones, otherRequired
   const [milestonePrerequisites, setMilestonePrerequisites] = useState([])
 
   const saveMilestone = ()=>{
-
+    const tempMilestone = {
+      name: milestoneName,
+      prerequisites: milestonePrerequisites
+    }
     fetch("http://localhost:8000/milestones/",{
       mode: "cors",
       method: "POST",
@@ -164,10 +167,7 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones, otherRequired
         "Access-Control-Allow-Origin": "*",
         "x-access-token": getToken(),
       },
-      body: JSON.stringify({
-        name: milestoneName,
-        prerequisites: milestonePrerequisites.map((m)=>m._id)
-      })
+      body: JSON.stringify(tempMilestone)
     })
     .then((res)=>{
       if(res.ok)
@@ -223,14 +223,14 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones, otherRequired
         }>
           {otherMilestones.map((val=>(
             <ListItem key={val._id} secondaryAction={
-              <Checkbox value={milestonePrerequisites.includes(val.name)} onChange={()=>{
+              <Checkbox value={milestonePrerequisites.includes(val._id)} onChange={()=>{
                   if(milestonePrerequisites.includes(val._id))
                   {
-                    setMilestonePrerequisites(milestonePrerequisites.filter((prerequisite)=>(prerequisite !== val.name)))
+                    setMilestonePrerequisites(milestonePrerequisites.filter((prerequisite)=>(prerequisite !== val._id)))
                   }
                   else
                   {
-                    setMilestonePrerequisites([...milestonePrerequisites, val.name])
+                    setMilestonePrerequisites([...milestonePrerequisites, val._id])
                   }
                 }
               }></Checkbox>

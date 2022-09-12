@@ -11,7 +11,7 @@ async function createUserAddress(username)
 
   
   recoveryPhrase = Seed.generateRecoveryPhrase();
-  writeFileSync('userWallets/'+ username +'-recovery-phrase.txt', recoveryPhrase);
+  writeFileSync('cardanoWallets/'+ username +'-recovery-phrase.txt', recoveryPhrase);
   console.log("Recovery Phrase Created")
   const mnemonicList = Seed.toMnemonicList(recoveryPhrase)
   wallet = await walletServer.createOrRestoreShelleyWallet(name, mnemonicList, passphrase)
@@ -104,13 +104,5 @@ function metadataToObject(metadata)
 
   return result
 }
-
-// const wallet = await getWallet()
-// console.log("Ballance: " + wallet.getAvailableBalance())
-// let transactions = await wallet.getTransactions();
-// console.log(transactions)
-
-// const metadata = await getMetadata(wallet, "e3708d8d3e1fcd94f8fdb83936ccba21b2f60e8247fef5590352b0bff31ad51f")
-// console.log(metadata)
 
 module.exports = {createUserAddress, getWallet, saveMetadata, getMetadata, getTxReceivingAddress, metadataToObject}

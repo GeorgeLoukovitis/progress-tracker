@@ -22,3 +22,8 @@ Frontend/node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/Backend/cardanoWallets
+/Backend/ethereumWallets
+/Backend/services/recovery-phrase.txt
+/Backend/recovery-phrase.txt
