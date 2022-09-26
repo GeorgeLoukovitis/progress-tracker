@@ -16,6 +16,10 @@ const ethereum = require("./services/ethereumWrapper")
 const {sha256} = require("js-sha256")
 const { BigNumber, utils } = require("ethers")
 
+const {ethers} = require("ethers");
+const { contractABI } = require("../SmartContracts/contractABI");
+const {readFileSync, writeFileSync} = require("fs")
+
 
 console.log("Environment: ")
 console.log(env.parsed)
@@ -26,27 +30,24 @@ app.use(express.json())
 app.use(morgan("dev"))
 app.use(cors())
 let server;
-let cardanoWallet;
-let ethereumProvider, ethereumWallet, ethereumContract;
-const cardanoEnabled = (process.env.CARDANO === "enabled")?true:false;
-const ethereumEnabled = (process.env.ETHEREUM === "enabled")?true:false;
 
+let cardanoWallet;
+const cardanoEnabled = (process.env.CARDANO === "enabled")?true:false;
 if(cardanoEnabled)
 {
-  cardano.getWallet().then((data)=>{
+  cardano.getApplicationWallet().then((data)=>{
     cardanoWallet = data
     console.log("Balance:")
     console.log(cardanoWallet.balance)
   })
 }
 
+let ethereumProvider, ethereumContract;
+const ethereumEnabled = (process.env.ETHEREUM === "enabled")?true:false;
 if(ethereumEnabled)
 {
-  ethereumProvider = ethereum.getProvider()
-  ethereum.getContract(process.env.CONTRACT_ADDRESS, ethereumProvider).then((data)=> {
-    ethereumContract = data
-    // console.log(ethereumContract)
-  })
+  ethereumProvider = new ethers.providers.JsonRpcProvider()
+  ethereumContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI, ethereumProvider)
 }
 
 mongoose.connect(process.env.REMOTE_DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 })
@@ -89,7 +90,7 @@ app.post("/register", async (req, res) => {
     username : username,
     firstName: firstName,
     lastName: lastName,
-    email: email.toLowerCase(), // sanitize
+    email: email.toLowerCase(),
     password: encryptedUserPassword,
   }
   
@@ -164,7 +165,7 @@ app.post("/login", async (req, res)=>{
 
 app.get("/", async (req, res)=>{
 
-  let wallet = await cardano.getWallet();
+  let wallet = await cardano.getApplicationWallet();
   console.log(wallet.getAvailableBalance());
   let transactions = await wallet.getTransactions();
   console.log(transactions)
@@ -203,9 +204,7 @@ app.post("/milestones", auth, async (req, res)=>{
   const {name, prerequisites} = milestone
 
   if(!name)
-  {
     return res.status(400).send("All input is required");
-  }
 
   const creator = await User.findById(uid)
   const document = new Milestone(
@@ -215,8 +214,6 @@ app.post("/milestones", auth, async (req, res)=>{
     }
   )
   const result = await document.save()
-  console.log("Result:")
-  console.log(result)
 
   if(ethereumEnabled && creator.ethereumAddress)
   {
@@ -224,19 +221,14 @@ app.post("/milestones", auth, async (req, res)=>{
     const userWallet = ethereum.getWallet(creator.username, ethereumProvider)
     const userContract = ethereumContract.connect(userWallet);
     let blockchainResult = await userContract.createMilestone(BigNumber.from("0x"+ mid.toString()))
-    console.log("Milestone: " + BigNumber.from("0x"+mid.toString()))
-    console.log("isAdmin: " + creator.ethereumAddress)
-    console.log(await userContract.isAdmin(creator.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+    console.log("Success:", await userContract.isAdmin(creator.ethereumAddress, BigNumber.from("0x"+mid.toString())))
 
     for(let milestonePrerequisite of prerequisites)
     {
       blockchainResult = await userContract.addMilestonePrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString()))
-      // console.log(blockchainResult)
-      console.log("isPrerequisite: " + milestonePrerequisite.toString())
-      console.log(await userContract.hasPrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString())))
+      console.log("Success", await userContract.hasPrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString())))
     }
   }
-
   return res.status(201).send(result);
 })
 
@@ -355,7 +347,6 @@ app.post("/projects", auth, async (req, res) => {
   }
 
   const creator = await User.findById(uid)
-
   const project = {
     title,
     creator: ObjectId(uid),
@@ -371,28 +362,22 @@ app.post("/projects", auth, async (req, res) => {
   for(let mid of milestones){
     if(ObjectId.isValid(mid))
     {
-      const milestone = await Milestone.findById(mid)
-      milestone.assosiatedProject = result._id
-      const milestoneResult = await milestone.save()
-
       if(ethereumEnabled && creator.ethereumAddress)
       {
         const userWallet = ethereum.getWallet(req.user.username, ethereumProvider)
         const userContract = ethereumContract.connect(userWallet);
-        // let blockchainResult = await userContract.createMilestone(BigNumber.from("0x"+mid.toString()))
         for(let projectAdmin of projectAdmins)
         {
           if(projectAdmin.ethereumAddress)
           {
             blockchainResult = await userContract.addMilestoneAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString()))
-            console.log("isAdmin: " + projectAdmin.ethereumAddress)
-            console.log(await userContract.isAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+            console.log("Admin added: ", await userContract.isAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString())))
           }
         }
-
-        // for(let milestonePrerequisite of milestone.prerequisites)
-        //   blockchainResult = await userContract.addMilestonePrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString()))
       }
+      const milestone = await Milestone.findById(mid)
+      milestone.assosiatedProject = result._id
+      const milestoneResult = await milestone.save()
     }
   }
   return res.status(201).send(result)
@@ -427,11 +412,6 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   const awardTo = req.body.userId
   const support = req.body.support
   const data = req.body.data
-
-  console.log("Data:")
-  console.log(data)
-  console.log(sha256(data))
-
 
   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid)))
   {
@@ -476,25 +456,16 @@ app.post("/awardMilestone", auth, async (req, res)=>{
       {
         const userWallet = ethereum.getWallet(req.user.username, ethereumProvider)
         const userContract = ethereumContract.connect(userWallet);
-        console.log(usr.ethereumAddress)
-        console.log(BigNumber.from("0x"+mid.toString()))
-        console.log(data)
         let blockchainResult = await userContract.awardMilestone(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), dataHash)
-        // console.log(blockchainResult)
         for(let supportMilestone of support)
-        {
           blockchainResult = await userContract.addSupportItem(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+supportMilestone.toString()))
-        }
       }
-
 
       const achievement = new Achievement(tempAchievement)
       const achievementSaved = await achievement.save()
-      console.log(achievementSaved)
 
       usr.achievements.push(achievementSaved._id)
       const usrSaved = await usr.save()
-      // console.log(usrSaved);
 
       return res.status(201).send({result: "ok"})
     }
@@ -621,9 +592,7 @@ app.get("/achievements", auth, async (req, res)=>{
       achievements = user.achievements.filter(async (achievement)=> {
         const metadata = await cardano.getMetadata(cardanoWallet, achievement.cardanoTx)
         const metadataObj = cardano.metadataToObject(metadata)
-        console.log(metadataObj)
         const receiverAddress = await cardano.getTxReceivingAddress(cardanoWallet, achievement.cardanoTx)
-        console.log(receiverAddress)
         return (achievement.milestone == metadataObj.mid) && (user.cardanoAddress == receiverAddress)
       })
     }

@@ -18,7 +18,7 @@ contract AssignmentContract{
     mapping(uint256 => uint256[]) public milestonePrerequisites;
     
 
-    // Add milestone to milestones
+    // Create a new milestones
     function createMilestone(uint256 _milestone) public 
     {
         require(milestoneExists[_milestone] == false,"The milestone has already been created");
@@ -32,6 +32,7 @@ contract AssignmentContract{
         return (userMilestones[_usr][_milestone].milestone > 0);
     }
 
+    // Check if an address meets all the requirements to be awarded a milestone
     function meetsPrerequisites(address _user, uint256 _milestone) public view returns(bool)
     {
         uint256[] memory _prerequisites = milestonePrerequisites[_milestone];
@@ -56,6 +57,7 @@ contract AssignmentContract{
     function hasPrerequisite(uint256 _milestone1, uint256 _milestone2) public view returns(bool)
     {
         require(milestoneExists[_milestone1], "Such a milestone has not been created");
+
         uint256[] memory _prerequisites = milestonePrerequisites[_milestone1];
         for(uint i = 0; i<_prerequisites.length && i<MAX_PREREQUISITES; i++)
         {

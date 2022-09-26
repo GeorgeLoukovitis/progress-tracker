@@ -8,22 +8,15 @@ function getProvider(){
   return provider;
 }
 
-function newWallet(username, prov){
+function newWallet(username, provider){
   const wallet = ethers.Wallet.createRandom()
-  wallet.connect(prov)
+  wallet.connect(provider)
   writeFileSync("./ethereumWallets/"+username+"-recovery-phrase.txt", wallet.mnemonic.phrase)
   return wallet;
 }
 
-function getWallet(username, prov){
-  const recoveryPhrase = readFileSync("./ethereumWallets/"+username+"-recovery-phrase.txt").toString()
-  let wallet = ethers.Wallet.fromMnemonic(recoveryPhrase)
-  wallet = wallet.connect(prov)
-  return wallet;
-}
-
-async function fundWallet(wallet, prov){
-  const signer = prov.getSigner()
+async function fundWallet(wallet, provider){
+  const signer = provider.getSigner()
   const tx = await signer.sendTransaction({
     to: wallet.address,
     value: ethers.utils.parseEther("1.0")
@@ -31,7 +24,14 @@ async function fundWallet(wallet, prov){
   return tx;
 }
 
-async function getContract(contractAddr, prov)
+function getWallet(username, provider){
+  const recoveryPhrase = readFileSync("./ethereumWallets/"+username+"-recovery-phrase.txt").toString()
+  let wallet = ethers.Wallet.fromMnemonic(recoveryPhrase)
+  wallet = wallet.connect(provider)
+  return wallet;
+}
+
+function getContract(contractAddr, prov)
 {
   const contract = new ethers.Contract(contractAddr, contractABI, prov)
   return contract;

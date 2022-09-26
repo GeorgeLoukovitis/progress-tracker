@@ -8,22 +8,17 @@ async function createUserAddress(username)
   let recoveryPhrase, wallet;
   const name = username
   const passphrase = "userwalletpassword"
-
-  
   recoveryPhrase = Seed.generateRecoveryPhrase();
   writeFileSync('cardanoWallets/'+ username +'-recovery-phrase.txt', recoveryPhrase);
-  console.log("Recovery Phrase Created")
   const mnemonicList = Seed.toMnemonicList(recoveryPhrase)
   wallet = await walletServer.createOrRestoreShelleyWallet(name, mnemonicList, passphrase)
   const addresses = await wallet.getAddresses()
-  console.log(wallet.name + " - " + addresses[0].id);
   return addresses[0].id
 }
 
-async function getWallet()
+async function getApplicationWallet()
 {
   let walletServer = WalletServer.init('http://localhost:8090/v2');
-  const information = await walletServer.getNetworkInformation();
   let recoveryPhrase, wallet;
   const name = "wallet1"
   const passphrase = "wallet1pass"
@@ -34,22 +29,15 @@ async function getWallet()
     const wallets = await walletServer.wallets();
     const id = wallets[1].id;
     wallet = await walletServer.getShelleyWallet(id);
-
-    // const mnemonicList = Seed.toMnemonicList(recoveryPhrase)
-    // wallet = await walletServer.createOrRestoreShelleyWallet(name, mnemonicList, passphrase)
   }
   else
   {
     recoveryPhrase = Seed.generateRecoveryPhrase();
     writeFileSync('recovery-phrase.txt', recoveryPhrase);
-    console.log("Recovery Phrase Created")
     const mnemonicList = Seed.toMnemonicList(recoveryPhrase)
     console.log(mnemonicList);
     wallet = await walletServer.createOrRestoreShelleyWallet(name, mnemonicList, passphrase)
   }
-
-  // console.log("Wallet: " + wallet.name);
-  // console.log("Balance: " + await wallet.getAvailableBalance());
   return wallet
 }
 
@@ -68,7 +56,6 @@ async function saveMetadata(wallet, metadata, receiver)
   }
   const amount = 1000000; // 1 ADA
   const transaction = await wallet.sendPayment(passphrase, [receiverAddress], [amount], metadata);
-  // console.log(transaction)
   return transaction.id
 }
 
@@ -105,4 +92,4 @@ function metadataToObject(metadata)
   return result
 }
 
-module.exports = {createUserAddress, getWallet, saveMetadata, getMetadata, getTxReceivingAddress, metadataToObject}
+module.exports = {createUserAddress, getApplicationWallet, saveMetadata, getMetadata, getTxReceivingAddress, metadataToObject}
