@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {login} from '../utilities/LoginService';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Avatar, Box, Button, Container, CssBaseline, Grid, Link, TextField, Typography } from '@mui/material';
@@ -8,10 +8,11 @@ const theme = createTheme();
 
 const Login = ({loginFun, switchToRegister}) => {
 
+  const [errorMessage, setErrorMessage] = useState("");
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    login(data.get("username"), data.get("password"), loginFun);
+    login(data.get("username"), data.get("password"), loginFun, setErrorMessage);
   };
 
   return (
@@ -53,11 +54,12 @@ const Login = ({loginFun, switchToRegister}) => {
               id="password"
               autoComplete="current-password"
             />
+            <Typography color="red" variant='subtitle2' align="center">{errorMessage}</Typography>
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ mt: 2, mb: 2 }}
             >
               Sign In
             </Button>

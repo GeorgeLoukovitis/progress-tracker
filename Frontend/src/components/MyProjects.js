@@ -41,8 +41,8 @@ const MyProjects = () => {
       
     })
     .then((data)=>{
-      console.log("Joined Projects")
-      console.log(data)
+      // console.log("Joined Projects")
+      // console.log(data)
       setProjects(data)
     })
     .catch((err)=>{
@@ -76,7 +76,7 @@ const MyProjects = () => {
                   <ListItem key={project._id} secondaryAction={(
                     <Stack direction="row">
                       <Button onClick={()=>{navigate("/award-milestones/"+project._id)}}>Award Milestones</Button>
-                      <Button onClick={()=>{navigate("/manage-projects/"+project._id)}}>Manage</Button>
+                      {/* <Button onClick={()=>{navigate("/manage-projects/"+project._id)}}>Manage</Button> */}
                     </Stack>
                   )}>
                     <ListItemText primary={project.title}></ListItemText>

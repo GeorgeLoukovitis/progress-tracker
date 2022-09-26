@@ -60,19 +60,15 @@ mongoose.connect(process.env.REMOTE_DB_URL, { useNewUrlParser: true, useUnifiedT
 
 app.post("/register", async (req, res) => {
 
-  // Get user input
   const { firstName, lastName, email, password } = req.body;
-
-  // Validate user input
   if (!(email && password && firstName && lastName)) {
     return res.status(400).send("All input is required");
   }
 
-  // check if user already exist
-  // Validate if user exist in our database
   const checkEmail = await User.findOne({ email: email });
   if (checkEmail) {
     console.log("User Already Exist. Please Login")
+    res.statusMessage = "User Already Exist. Please Login"
     return res.status(409).send("User Already Exist. Please Login");
   }
   
@@ -80,6 +76,7 @@ app.post("/register", async (req, res) => {
   const checkUsername = await User.findOne({ username: username });
   if (checkUsername) {
     console.log("User Already Exist. Please Login")
+    res.statusMessage = "User Already Exist. Please Login"
     return res.status(409).send("User Already Exist. Please Login");
   }
 
@@ -104,7 +101,6 @@ app.post("/register", async (req, res) => {
     tempUser.ethereumAddress = userWallet.address
   }
 
-  // Create user in our database
   let user = await User.create(tempUser);
 
   // Create token
@@ -115,31 +111,30 @@ app.post("/register", async (req, res) => {
       expiresIn: "5h",
     }
   );
-
+  
+  // Include the auth token to the response
   let loggedUser = await User.findById(user._id)
   result = {
     ...loggedUser._doc,
     token
   }
 
-  console.log("Result")
   console.log(result)
 
-  // return new user
   return res.status(201).json(result);
 });
 
 app.post("/login", async (req, res)=>{
   const { email, password } = req.body;
 
-  // Validate user input
+  // Retrieve the user document
   if (!(email && password)) {
     return res.status(400).send("All input is required");
   }
-  // Validate if user exist in our database
   const user = await User.findOne({ email }).populate("achievements");
 
   if (user && (await bcrypt.compare(password, user.password))) {
+    
     // Create token
     const token = jwt.sign(
       { user_id: user._id, username: user.username },
@@ -149,35 +144,36 @@ app.post("/login", async (req, res)=>{
       }
     );
 
-    // save user token
+    // Include the auth token to the response
     result = {
       ...user._doc,
       token
     }
     console.log(result)
-    // user
     return res.status(200).json(result);
   }
   else{
+    res.statusMessage = "Invalid Credentials";
     return res.status(400).send("Invalid Credentials");
   }
 });
 
-app.get("/", async (req, res)=>{
+// app.get("/", async (req, res)=>{
 
-  let wallet = await cardano.getApplicationWallet();
-  console.log(wallet.getAvailableBalance());
-  let transactions = await wallet.getTransactions();
-  console.log(transactions)
+//   let wallet = await cardano.getApplicationWallet();
+//   console.log(wallet.getAvailableBalance());
+//   let transactions = await wallet.getTransactions();
+//   console.log(transactions)
 
-  const id = ObjectId("62b0b6d47d0e8421534caf0d").valueOf()
-  const num_id = parseInt(id, 16)
-  console.log(id)
-  console.log(num_id)
-  return res.status(200).send(id)
-})
+//   const id = ObjectId("62b0b6d47d0e8421534caf0d").valueOf()
+//   const num_id = parseInt(id, 16)
+//   console.log(id)
+//   console.log(num_id)
+//   return res.status(200).send(id)
+// })
 
 
+// Get a list of all the milestones
 app.get("/milestones", (req, res)=>{
 
   Milestone.find().sort({name:1})
@@ -185,6 +181,7 @@ app.get("/milestones", (req, res)=>{
     .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
 })
 
+// Get milestone information
 app.get("/milestones/:id", (req, res)=>{
   const id = req.params.id
 
@@ -194,17 +191,23 @@ app.get("/milestones/:id", (req, res)=>{
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
   else {
-    return res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send("Invalid ID")
   }
 })
 
+// Create a new milestone
 app.post("/milestones", auth, async (req, res)=>{
   const uid = req.user.user_id
   const milestone = req.body
   const {name, prerequisites} = milestone
 
   if(!name)
+  {
+    res.statusMessage = "All input is required"
     return res.status(400).send("All input is required");
+  }
+
+  // Retrieve the document regarding the milestone creator and save the milestone to the database
 
   const creator = await User.findById(uid)
   const document = new Milestone(
@@ -215,47 +218,63 @@ app.post("/milestones", auth, async (req, res)=>{
   )
   const result = await document.save()
 
+  // Create the milestone in the contract and add its prerequisites
+
   if(ethereumEnabled && creator.ethereumAddress)
   {
     const mid = result._id
     const userWallet = ethereum.getWallet(creator.username, ethereumProvider)
     const userContract = ethereumContract.connect(userWallet);
-    let blockchainResult = await userContract.createMilestone(BigNumber.from("0x"+ mid.toString()))
-    console.log("Success:", await userContract.isAdmin(creator.ethereumAddress, BigNumber.from("0x"+mid.toString())))
 
-    for(let milestonePrerequisite of prerequisites)
+    try
     {
-      blockchainResult = await userContract.addMilestonePrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString()))
-      console.log("Success", await userContract.hasPrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString())))
+      let blockchainResult = await userContract.createMilestone(BigNumber.from("0x"+ mid.toString()))
+      console.log("Success:", await userContract.isAdmin(creator.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+  
+      for(let milestonePrerequisite of prerequisites)
+      {
+        blockchainResult = await userContract.addMilestonePrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString()))
+        console.log("Success", await userContract.hasPrerequisite(BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+milestonePrerequisite.toString())))
+      }
+    }
+    catch(err)
+    {
+      // If the contract call reverts delete the milestone
+
+      await Milestone.findByIdAndDelete(result._id)
+      console.log(err.errorArgs[0])
+      res.statusMessage = err.errorArgs[0]
+      res.status(500).send(err.errorArgs[0])
     }
   }
   return res.status(201).send(result);
 })
 
-app.delete("/milestones/:id", auth, async (req, res)=>{
-  const uid = req.user.user_id
-  const mid = req.params.id
+// app.delete("/milestones/:id", auth, async (req, res)=>{
+//   const uid = req.user.user_id
+//   const mid = req.params.id
 
-  if(ObjectId.isValid(mid))
-  {
-    const milestone = await Milestone.findById(mid)
-    if(milestone.assosiatedProject)
-    {
-      const project = await Project.findById(milestone.assosiatedProject)
-      if((uid == project.creator) || project.admins.includes(uid))
-      {
-        project.milestones = project.milestones.filter((m)=>(m!==mid))
-        await project.save()
-        const milestoneResult = await Milestone.findByIdAndDelete(mid)
-        return res.status(200).send({result:milestoneResult})
-      }
-    }
-  }
-  else {
-    return res.status(500).send({err: "Invalid ID"})
-  }
-})
+//   if(ObjectId.isValid(mid))
+//   {
+//     const milestone = await Milestone.findById(mid)
+//     if(milestone.assosiatedProject)
+//     {
+//       const project = await Project.findById(milestone.assosiatedProject)
+//       if((uid == project.creator) || project.admins.includes(uid))
+//       {
+//         project.milestones = project.milestones.filter((m)=>(m!==mid))
+//         await project.save()
+//         const milestoneResult = await Milestone.findByIdAndDelete(mid)
+//         return res.status(200).send({result:milestoneResult})
+//       }
+//     }
+//   }
+//   else {
+//     return res.status(500).send({err: "Invalid ID"})
+//   }
+// })
 
+// Get a list of all the users
 app.get("/users", (req, res)=>{
   
   User.find().sort({username:1})
@@ -267,11 +286,11 @@ app.get("/users", (req, res)=>{
         }
       }))
     })
-    .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
+    .catch((err)=>{res.status(500).send(`Error: ${err}`)})
 })
 
+// Get user information. Full access is only granted to a user about himself
 app.get("/users/:id", auth, (req, res)=>{
-  
   const id = req.params.id
   if (ObjectId.isValid(id)){
     User.findById(id).populate("achievements")
@@ -289,37 +308,39 @@ app.get("/users/:id", auth, (req, res)=>{
           })
         }
       })
-      .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
+      .catch((err)=>{res.status(500).send(`Error: ${err}`)})
   }
   else {
-    return res.status(500).send({err: "Invalid ID"})
+    return res.status(500).send("Invalid ID")
   }
 })
 
-app.delete("/users/:id", (req, res)=>{
-  const id = req.params.id
-  console.log(id)
+// app.delete("/users/:id", (req, res)=>{
+//   const id = req.params.id
+//   console.log(id)
 
-  if(ObjectId.isValid(id))
-  {
-    User.findByIdAndDelete(id)
-      .then(result=>res.status(200).json(result))
-      .catch(err=>res.status(500).send({error: err}))
-  }
-  else {
-    return res.status(500).send({err: "Invalid ID"})
-  }
-})
+//   if(ObjectId.isValid(id))
+//   {
+//     User.findByIdAndDelete(id)
+//       .then(result=>res.status(200).json(result))
+//       .catch(err=>res.status(500).send({error: err}))
+//   }
+//   else {
+//     return res.status(500).send({err: "Invalid ID"})
+//   }
+// })
 
+// Get a list of all the projects
 app.get("/projects", (req, res)=>{
   
   Project.find()
     .sort({title: 1})
     .populate("milestones")
     .then(result=>res.status(200).send(result))
-    .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
+    .catch((err)=>{res.status(500).send(`Error: ${err}`)})
 })
 
+// Get a specified project
 app.get("/projects/:id", (req, res)=>{
   const id = req.params.id
 
@@ -331,20 +352,21 @@ app.get("/projects/:id", (req, res)=>{
       .catch((err)=>{res.status(500).send({err: `Error: ${err}`})})
   }
   else {
-    return res.status(500).send({err: "Invalid ID"})
+    res.statusMessage = "Invalid ID"
+    return res.status(500).send("Invalid ID")
   }
 })
 
+// Create a new project
 app.post("/projects", auth, async (req, res) => {
 
   const uid = req.user.user_id
-  // Get user input
   const { title, admins, usersEnrolled, milestones, requiredMilestones } = req.body;
-
-  // Validate user input
   if (!(title && admins)) {
     return res.status(400).send("All input is required");
   }
+
+  // Save the new project to the database and retreive the documents regarding the project creator and the project admins
 
   const creator = await User.findById(uid)
   const project = {
@@ -359,6 +381,8 @@ app.post("/projects", auth, async (req, res) => {
   const result = await document.save()
   const projectAdmins = (await Project.findById(result._id).populate("admins")).admins
 
+  // Associate all milestones to the project
+
   for(let mid of milestones){
     if(ObjectId.isValid(mid))
     {
@@ -366,12 +390,27 @@ app.post("/projects", auth, async (req, res) => {
       {
         const userWallet = ethereum.getWallet(req.user.username, ethereumProvider)
         const userContract = ethereumContract.connect(userWallet);
+
+        // Add each admin of the project as an authority of each milestone in the contract
+
         for(let projectAdmin of projectAdmins)
         {
           if(projectAdmin.ethereumAddress)
           {
-            blockchainResult = await userContract.addMilestoneAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString()))
-            console.log("Admin added: ", await userContract.isAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+            try
+            {
+              blockchainResult = await userContract.addMilestoneAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString()))
+              console.log("Admin added: ", await userContract.isAdmin(projectAdmin.ethereumAddress, BigNumber.from("0x"+mid.toString())))
+            }
+            catch(err)
+            {
+              // If the contract call reverts delete the project
+
+              await Project.findByIdAndDelete(result._id)
+              console.log(err.errorArgs[0])
+              res.statusMessage = err.errorArgs[0]
+              res.status(500).send(err.errorArgs[0])
+            }
           }
         }
       }
@@ -383,11 +422,12 @@ app.post("/projects", auth, async (req, res) => {
   return res.status(201).send(result)
 })
 
+
+// Enroll the user to a project
 app.post("/enrollToProject", auth, async (req, res)=>{
   const uid = req.user.user_id
   const pid = req.body.projectId
-  console.log(uid)
-  console.log(req)
+
   if(ObjectId.isValid(uid) && ObjectId.isValid(pid))
   {
     const user = await User.findById(uid)
@@ -402,10 +442,12 @@ app.post("/enrollToProject", auth, async (req, res)=>{
   }
   else
   {
-    return res.status(500).send({err: "Invalid ID"})
+    res.statusMessage = "Invalid ID"
+    return res.status(500).send("Invalid ID")
   }
 })
 
+// Award a milestone to a user
 app.post("/awardMilestone", auth, async (req, res)=>{
   const uid = req.user.user_id
   const mid = req.body.milestoneId
@@ -413,25 +455,30 @@ app.post("/awardMilestone", auth, async (req, res)=>{
   const support = req.body.support
   const data = req.body.data
 
+  // Retrieve user, milestone and project information from the database
+
   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid)))
   {
-    console.log("Milestone not valid " + mid)
-    return res.status(500).send({err: "Invalid ID"})
+    console.log("Milestone or User is not valid")
+    res.statusMessage = "Milestone or User is not valid"
+    return res.status(500).send("Milestone or User is not valid")
   }
-
   const milestone = await Milestone.findById(mid)
   const pid = milestone.assosiatedProject
 
   if(!ObjectId.isValid(pid))
   {
-    console.log("Project not valid "+pid)
-    return res.status(500).send({err: "Invalid ID"})
+    console.log("Assosiated Project is not valid")
+    res.statusMessage = "Assosiated Project is not valid"
+    return res.status(500).send("Assosiated Project is not valid")
   }
-
   const project = await Project.findById(pid)
+
+  // Check that the logged in user is an admin of the project and that the user to be awarded is enrolled
+
   if((uid == project.creator) || project.admins.includes(uid))
   {
-    const usr = await User.findById(awardTo)
+    const usr = await User.findById(awardTo).populate("achievements")
     const authority = await User.findById(uid)
 
     if(usr.projectsJoined.includes(ObjectId(pid)))
@@ -445,6 +492,20 @@ app.post("/awardMilestone", auth, async (req, res)=>{
       }
       const dataHash = sha256(data)
 
+      // Check that the user to be awarded meets the prerequisites
+
+      const achievedMilestones = user.achievements.map((a)=>a.milestone);
+      for(let prerequisite of milestone.prerequisites)
+      {
+        if(!achievedMilestones.includes(prerequisite))
+        {
+          res.statusMessage = "Not all prerequisites have been accomplished"
+          res.status(500).send("Not all prerequisites have been accomplished")
+        }
+      }
+
+      // Submit a transaction to cardano with metadata verifying the achievement
+
       if(cardanoEnabled && usr.cardanoAddress)
       {
         const metadata = [authority.firstName + authority.lastName, uid, project.title, milestone.name, mid, dataHash, support]
@@ -452,14 +513,24 @@ app.post("/awardMilestone", auth, async (req, res)=>{
         tempAchievemt.cardanoTx = txId
       }
 
+      // Add the achievement and its support to the Ethereum smart contract
+
       if(ethereumEnabled && authority.ethereumAddress && usr.ethereumAddress)
       {
         const userWallet = ethereum.getWallet(req.user.username, ethereumProvider)
         const userContract = ethereumContract.connect(userWallet);
-        let blockchainResult = await userContract.awardMilestone(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), dataHash)
-        for(let supportMilestone of support)
-          blockchainResult = await userContract.addSupportItem(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+supportMilestone.toString()))
+        try{
+          let blockchainResult = await userContract.awardMilestone(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), dataHash)
+          for(let supportMilestone of support)
+            blockchainResult = await userContract.addSupportItem(usr.ethereumAddress, BigNumber.from("0x"+mid.toString()), BigNumber.from("0x"+supportMilestone.toString()))
+        }
+        catch (err){
+          res.statusMessage = err.errorArgs[0]
+          res.status(500).send(err.errorArgs[0])
+        }
       }
+
+      // Save the achievement to the database
 
       const achievement = new Achievement(tempAchievement)
       const achievementSaved = await achievement.save()
@@ -467,22 +538,24 @@ app.post("/awardMilestone", auth, async (req, res)=>{
       usr.achievements.push(achievementSaved._id)
       const usrSaved = await usr.save()
 
-      return res.status(201).send({result: "ok"})
+      return res.status(201).send(achievementSaved)
     }
     else
     {
-      return res.status(500).send({result: "The users hasn't joined this project"})
+      res.statusMessage = "The users hasn't joined this project"
+      return res.status(500).send("The users hasn't joined this project")
     }
-    
   }
   else
   {
-    console.log("Not an admin")
-    return res.status(500).send({err: "Your are not an admin"})
+    console.log("Only a project admin can award milestones")
+    res.statusMessage = "Only a project admin can award milestones"
+    return res.status(500).send("Only a project admin can award milestones")
   }
 
 })
 
+// Get the projects for which the user is an authority
 app.get("/myProjects", auth, async (req, res)=>{
   const uid = req.user.user_id
   const projects = await Project.find({$or:[
@@ -494,57 +567,70 @@ app.get("/myProjects", auth, async (req, res)=>{
   return res.status(200).send(projects)
 })
 
-app.post("/addMilestoneToProject", auth, async (req, res)=>{
-  const uid = req.user.user_id
-  const mid = req.body.milestoneId
-  const pid = req.body.projectId
-  const required = req.body.required
+// Associate a milestone with a specific project 
+// app.post("/addMilestoneToProject", auth, async (req, res)=>{
+//   const uid = req.user.user_id
+//   const mid = req.body.milestoneId
+//   const pid = req.body.projectId
+//   const required = req.body.required
 
-  if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
-    return res.status(500).send({err: "Invalid ID"})
+//   if(!(ObjectId.isValid(mid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
+//   {
+//     res.statusMessage = "Invalid ID"
+//     return res.status(500).send("Invalid ID")
+//   }
 
-  const milestone = await Milestone.findById(mid)
-  if(milestone.assosiatedProject)
-    return res.status(500).send({err: "Already belongs to project"})
+//   const milestone = await Milestone.findById(mid)
+//   if(milestone.assosiatedProject)
+//   {
+//     res.statusMessage = "Already belongs to project"
+//     return res.status(500).send("Already belongs to project")
+//   }
 
-  const project = await Project.findById(pid)
-  if((uid == project.creator) || project.admins.includes(uid))
-  {
-    project.milestones.push(ObjectId(mid))
-    if(required)
-      project.requiredMilestones.push(ObjectId(mid))
-    const projectResult = await project.save()
-    return res.status(201).send({project: projectResult})
-  }
-  else
-  {
-    return res.status(500).send({err: "Your are not an admin"})
-  }
+//   const project = await Project.findById(pid)
+//   if((uid == project.creator) || project.admins.includes(uid))
+//   {
+//     project.milestones.push(ObjectId(mid))
+//     if(required)
+//       project.requiredMilestones.push(ObjectId(mid))
+//     const projectResult = await project.save()
+//     return res.status(201).send({project: projectResult})
+//   }
+//   else
+//   {
+//     res.statusMessage = "Your are not an admin"
+//     return res.status(500).send("Your are not an admin")
+//   }
 
-})
+// })
 
-app.post("/addAdminToProject", auth, async (req, res)=>{
-  const uid = req.user.user_id
-  const aid = req.body.adminId
-  const pid = req.body.projectId
+// Add a new admin to a project
+// app.post("/addAdminToProject", auth, async (req, res)=>{
+//   const uid = req.user.user_id
+//   const aid = req.body.adminId
+//   const pid = req.body.projectId
 
-  if(!(ObjectId.isValid(aid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
-    return res.status(500).send({err: "Invalid ID"})
+//   if(!(ObjectId.isValid(aid) && ObjectId.isValid(uid) && ObjectId.isValid(pid)))
+//   {
+//     res.statusMessage = "Invalid ID"
+//     return res.status(500).send("Invalid ID")
+//   }
 
-  const project = await Project.findById(pid)
-  if(uid == project.creator)
-  {
-    project.admins.push(ObjectId(aid))
-    const projectResult = await project.save()
-    return res.status(201).send({project: projectResult})
-  }
-  else
-  {
-    return res.status(500).send({err: "Your are not an admin"})
-  }
+//   const project = await Project.findById(pid)
+//   if(uid == project.creator)
+//   {
+//     project.admins.push(ObjectId(aid))
+//     const projectResult = await project.save()
+//     return res.status(201).send({project: projectResult})
+//   }
+//   else
+//   {
+//     res.statusMessage = "Your are not an admin"
+//     return res.status(500).send("Your are not an admin")
+//   }
+// })
 
-})
-
+// Get the users that have enrolled to a project
 app.get("/enrolledUsers/:pid", auth, async (req, res)=>{
   const uid = req.user.user_id
   const pid = req.params.pid
@@ -558,16 +644,16 @@ app.get("/enrolledUsers/:pid", auth, async (req, res)=>{
   console.log(project)
   if((uid == project.creator) || project.admins.includes(uid))
   {
-    
     return res.status(201).send(project.usersEnrolled)
   }
   else
   {
-    return res.status(500).send({err: "Your are not an admin"})
+    res.statusMessage = "Your are not an admin";
+    return res.status(500).send("Your are not an admin")
   }
-
 })
 
+// Get the projects a users has enrolled to 
 app.get("/joinedProjects", auth, async (req, res)=>{
   const uid = req.user.user_id
   if(ObjectId(uid))
@@ -577,10 +663,12 @@ app.get("/joinedProjects", auth, async (req, res)=>{
   }
   else
   {
-    return res.status(500).send({err: "Invalid Id"})
+    res.statusMessage = "Invalid Id"
+    return res.status(500).send("Invalid Id")
   }
 })
 
+// Get the achievement that the user has verifiably got
 app.get("/achievements", auth, async (req, res)=>{
   const uid = req.user.user_id
   if(ObjectId(uid))
@@ -595,11 +683,13 @@ app.get("/achievements", auth, async (req, res)=>{
         const receiverAddress = await cardano.getTxReceivingAddress(cardanoWallet, achievement.cardanoTx)
         return (achievement.milestone == metadataObj.mid) && (user.cardanoAddress == receiverAddress)
       })
+      return res.status(200).send(achievements)
     }
-    return res.status(200).send(achievements)
+    res.statusMessage = "The backend needs to be connected to cardano for verified achievements to be displayed"
+    return res.status(500).send("The backend needs to be connected to cardano for verified achievements to be displayed")
   }
   else
   {
-    return res.status(500).send({err: "Invalid Id"})
+    return res.status(500).send("Invalid Id")
   }
 })

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import {register} from '../utilities/LoginService';
 import { Avatar, Box, Button, Container, CssBaseline, Grid, Link, TextField, Typography } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -9,10 +9,12 @@ const theme = createTheme();
 
 const Register = ({loginFun, switchToLogin}) => {
 
+  const [errorMessage, setErrorMessage] = useState("");
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    register(data.get("firstName"), data.get("lastName"), data.get("email"), data.get("password"), loginFun);
+    register(data.get("firstName"), data.get("lastName"), data.get("email"), data.get("password"), loginFun, setErrorMessage);
   };
 
   return (
@@ -72,6 +74,7 @@ const Register = ({loginFun, switchToLogin}) => {
               id="password"
               autoComplete="current-password"
             />
+            <Typography color="red" variant='subtitle2' align="center">{errorMessage}</Typography>
             <Button
               type="submit"
               fullWidth

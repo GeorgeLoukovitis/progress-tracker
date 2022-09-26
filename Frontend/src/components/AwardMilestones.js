@@ -30,7 +30,7 @@ const SelectMilestone = ({previousStage, nextStage, setMilestoneToAward, project
     })
     .then((data)=>{
       console.log("Project")
-      console.log(data)
+      // console.log(data)
       setProject(data)
     })
   },[projectId,])
@@ -70,6 +70,7 @@ const SelectMilestone = ({previousStage, nextStage, setMilestoneToAward, project
         </Button>
         <Button
           fullWidth
+          disabled = {!milestone}
           variant="contained"
           sx={{ mb: 2 }}
           onClick={()=>{
@@ -88,8 +89,9 @@ const SelectMilestone = ({previousStage, nextStage, setMilestoneToAward, project
 const SelectUser = ({previousStage, nextStage, setUserToAward})=> {
   const {projectId} = useParams()
   const [users, setUsers] = useState([])
+  const [errorMessage, setErrorMessage] = useState(null);
+
   useEffect(()=>{
-    
     fetch("http://localhost:8000/enrolledUsers/"+projectId,
     {
       mode: "cors",
@@ -102,12 +104,16 @@ const SelectUser = ({previousStage, nextStage, setUserToAward})=> {
     })
       .then((res)=>{
         if(res.ok)
-        {
           return res.json()
-        }
+        else
+          throw Error(res.statusText)
       })
       .then((data)=>{
         setUsers(data)
+      })
+      .catch((err)=>{
+        console.log(err.message)
+        setErrorMessage(err.message)
       })
   },[projectId,])
   
@@ -131,28 +137,33 @@ const SelectUser = ({previousStage, nextStage, setUserToAward})=> {
           onChange={(e)=>{setSearchTerm(e.target.value)}}
           autoFocus
         />
-        <List>
-          {users.filter((u)=>(u.username.includes(searchTerm))).map((val=>(
-            <ListItem key={val._id} secondaryAction={
-              <Checkbox checked={selectedUser._id === val._id}></Checkbox>
-            }>
-              <ListItemButton onClick={()=>{
-                if(selectedUser._id === val._id)
-                {
-                  console.log("Remove")
-                  setSelectedUser(null)
-                }
-                else
-                {
-                  console.log("Add")
-                  setSelectedUser(val)
-                }
-              }}>
-                <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
-              </ListItemButton>
-            </ListItem>
-          )))}
-        </List>
+        {
+          (errorMessage)?
+          errorMessage:
+          <List>
+            {users.filter((u)=>(u.username.includes(searchTerm))).map((val=>(
+              <ListItem key={val._id} secondaryAction={
+                <Checkbox checked={selectedUser._id === val._id}></Checkbox>
+              }>
+                <ListItemButton onClick={()=>{
+                  if(selectedUser._id === val._id)
+                  {
+                    console.log("Remove")
+                    setSelectedUser(null)
+                  }
+                  else
+                  {
+                    console.log("Add")
+                    setSelectedUser(val)
+                  }
+                }}>
+                  <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
+                </ListItemButton>
+              </ListItem>
+            )))}
+          </List>
+        }
+        
       </CardContent>
       <CardActions>
         <Button
@@ -166,6 +177,7 @@ const SelectUser = ({previousStage, nextStage, setUserToAward})=> {
           Previous
         </Button>
         <Button
+          disabled = {selectedUser._id == 0}
           fullWidth
           variant="contained"
           sx={{ mb: 2 }}
@@ -296,10 +308,10 @@ const SetData = ({setAwardData, previousStage, nextStage}) => {
         <TextField
           margin="normal"
           fullWidth
-          id="Project Title"
-          label="Project Title"
-          name="title"
-          autoComplete="Title 1"
+          id="Comments"
+          label="Comments (optional)"
+          name="comments"
+          autoComplete=""
           value = {data}
           onChange={(e)=>{setData(e.target.value)}}
           autoFocus
@@ -381,7 +393,7 @@ const AwardMilestones = () => {
     setStage(stage-1);
   }
 
-  const awardUsers = () => {
+  const awardUser = () => {
     console.log("Award")
     console.log(milestoneToAward)
     console.log(userToAward)
@@ -414,7 +426,7 @@ const AwardMilestones = () => {
       return (<SetData previousStage={previousStage} nextStage={nextStage} setAwardData={setAwardData}></SetData>)
     else if(s === 4)
     {
-      awardUsers()
+      awardUser()
       return (<SuccessScreen></SuccessScreen>)
     }
   }

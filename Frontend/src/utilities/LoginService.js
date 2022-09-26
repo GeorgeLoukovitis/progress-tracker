@@ -1,5 +1,5 @@
 
-const login = (email, password, updateState) => {
+const login = (email, password, updateState, setError) => {
     fetch("http://localhost:8000/login",
     {
       mode: "cors",
@@ -17,13 +17,13 @@ const login = (email, password, updateState) => {
         }
         else
         {
-          throw Error("Login Error")
+          throw Error(res.statusText)
         }
       })
       .then((data)=>{
         if(data)
         {
-          console.log(data)
+          // console.log(data)
           setUser(data)
           updateState(data)
           setToken(data.token)
@@ -32,6 +32,7 @@ const login = (email, password, updateState) => {
       .catch((err)=>
       {
         console.log(err.message)
+        setError(err.message)
       })
 }
 
@@ -40,7 +41,7 @@ const logout = () => {
   localStorage.removeItem("token")
 }
 
-const register = (firstName, lastName, email, password, updateState) => {
+const register = (firstName, lastName, email, password, updateState, setError) => {
   fetch("http://localhost:8000/register",
     {
       mode: "cors",
@@ -58,17 +59,18 @@ const register = (firstName, lastName, email, password, updateState) => {
       }
       else
       {
-        throw Error("Registration Error")
+        throw Error(res.statusText)
       }
     })
     .then((data)=>{
-      console.log(data)
+      // console.log(data)
       updateState(data)
       setUser(data)
       setToken(data.token)
     })
     .catch((err)=>
     {
+      setError(err.message)
       console.log(err.message)
     })
 }

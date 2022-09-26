@@ -14,7 +14,7 @@ const ProjectScreen = () => {
   const [user, setLocalUser] = useState(getUser())
   const [project, setProject] = useState(null)
 
-  console.log(user);
+  // console.log(user);
 
   useEffect(()=>{
     refresh(setLocalUser)
@@ -37,8 +37,8 @@ const ProjectScreen = () => {
       }
     })
     .then((data)=>{
-      console.log("Project")
-      console.log(data)
+      // console.log("Project")
+      // console.log(data)
       setProject(data)
     })
   }, [projectId,])
@@ -71,12 +71,12 @@ const ProjectScreen = () => {
                     <Typography variant='h5'>Details:</Typography>
                     <Divider></Divider>
                     <Stack direction="row" spacing={1}>
-                      <Typography>creator:</Typography>
+                      <Typography>Created by:</Typography>
                       <Typography>{project.creator.username}</Typography>
                     </Stack>
                     <Stack direction="row" spacing={1}>
-                      <Typography>date:</Typography>
-                      <Typography>{Date(project.date)}</Typography>
+                      <Typography>Created at:</Typography>
+                      <Typography>{Date(project.date).toString().split("GMT")[0]}</Typography>
                     </Stack>
                   </CardContent>
                 </Card>

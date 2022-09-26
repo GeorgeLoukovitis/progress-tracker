@@ -40,8 +40,8 @@ const Home = () => {
       
     })
     .then((data)=>{
-      console.log("Joined Projects")
-      console.log(data)
+      // console.log("Joined Projects")
+      // console.log(data)
       setProjects(data)
     })
     .catch((err)=>{
