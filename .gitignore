@@ -1,8 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-Backend/node_modules
-Frontend/node_modules
+server/node_modules
+/node_modules
 /.pnp
 .pnp.js
 
@@ -23,7 +23,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-/Backend/cardanoWallets
-/Backend/ethereumWallets
-/Backend/services/recovery-phrase.txt
-/Backend/recovery-phrase.txt
+/server/cardanoWallets
+/server/ethereumWallets
+/server/services/recovery-phrase.txt
+/server/recovery-phrase.txt
