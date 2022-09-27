@@ -693,3 +693,12 @@ app.get("/achievements", auth, async (req, res)=>{
     return res.status(500).send("Invalid Id")
   }
 })
+
+app.post("/projectExists", async (req, res) => {
+  const projectTitle = req.body.title;
+  const result = await Project.findOne({title: projectTitle})
+  if(result)
+    return res.status(200).send("yes")
+  else
+    return res.status(200).send("no")
+})

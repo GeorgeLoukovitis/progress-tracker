@@ -1,6 +1,7 @@
 import {React, useState, useEffect} from 'react'
 import { useNavigate } from "react-router-dom";
-import {Box, Button, Card, CardContent, CssBaseline, Drawer, List, ListItem, ListItemText, ListSubheader, Stack } from '@mui/material';
+import {Avatar, Box, Button, Card, CardContent, CssBaseline, Drawer, List, ListItem, ListItemText, ListSubheader, Stack, Typography } from '@mui/material';
+import ErrorIcon from '@mui/icons-material/Error';
 import MyAppBar from './MyAppBar'
 import SideMenu from './SideMenu';
 import { getToken, getUser, refresh } from '../utilities/LoginService';
@@ -15,6 +16,7 @@ const MyAchievements = () => {
 
   const [user, setLocalUser] = useState(getUser())
   const [achievements, setAchievements] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("")
 
   useEffect(()=>{
     refresh(setLocalUser)
@@ -35,7 +37,7 @@ const MyAchievements = () => {
       }
       else
       {
-        throw Error("Refresh Error")
+        throw Error(res.statusText)
       }
       
     })
@@ -46,6 +48,7 @@ const MyAchievements = () => {
     })
     .catch((err)=>{
       console.log(err.message)
+      setErrorMessage(err.message)
     })
   },[])
 
@@ -66,28 +69,37 @@ const MyAchievements = () => {
                 alignItems: 'center', 
       }}>
         <Card sx={{width:500}}>
-          <CardContent>
-            <List subheader={
-              <ListSubheader>My Achievements</ListSubheader>
-            }>
-              {
-                achievements.map((achievement)=>(
-                  <ListItem key={achievement._id} secondaryAction={(
-                    <Stack direction="row">
-                      <Button onClick={()=>{
-                        if(achievement.cardanoTx)
-                        {
-                          window.open("https://preprod.cexplorer.io/tx/"+achievement.cardanoTx+"/metadata#data", '_blank');
-                        }
-                      }}>Show In Explorer</Button>
-                    </Stack>
-                  )}>
-                    <ListItemText primary={achievement.milestoneName} secondary={achievement.data}></ListItemText>
-                  </ListItem>
-                ))
-              }
-            </List>
-          </CardContent>
+          {
+            (errorMessage)?
+            <CardContent sx={{display: 'flex', flexDirection: 'column',alignItems: 'center'}}>
+              <Avatar sx={{ m: 1, bgcolor: 'red' }}>
+                <ErrorIcon></ErrorIcon>   
+              </Avatar>
+              <Typography variant="subtitle1">{errorMessage}</Typography>
+            </CardContent>:
+            <CardContent>
+              <List subheader={
+                <ListSubheader>My Achievements</ListSubheader>
+              }>
+                {
+                  achievements.map((achievement)=>(
+                    <ListItem key={achievement._id} secondaryAction={(
+                      <Stack direction="row">
+                        <Button onClick={()=>{
+                          if(achievement.cardanoTx)
+                          {
+                            window.open("https://preprod.cexplorer.io/tx/"+achievement.cardanoTx+"/metadata#data", '_blank');
+                          }
+                        }}>Show In Explorer</Button>
+                      </Stack>
+                    )}>
+                      <ListItemText primary={achievement.milestoneName} secondary={achievement.data}></ListItemText>
+                    </ListItem>
+                  ))
+                }
+              </List>
+            </CardContent>
+          }
           
         </Card>
       </Box>

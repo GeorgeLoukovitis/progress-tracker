@@ -10,6 +10,7 @@ import SideMenu from './SideMenu';
 const SetTitle = ({setProjectTitle, nextStage}) => {
 
   const [title, setTitle] = useState("")
+  const [errorMessage, setErrorMessage] = useState("")
 
   return (
     <Card sx={{width:500}}>
@@ -28,6 +29,11 @@ const SetTitle = ({setProjectTitle, nextStage}) => {
           onChange={(e)=>{setTitle(e.target.value)}}
           autoFocus
         />
+        {
+          (errorMessage)?
+          <Typography variant='subtitle2' color="red">{errorMessage}</Typography>:
+          <></>
+        }
       </CardContent>
       <CardActions>
         <Button
@@ -35,8 +41,33 @@ const SetTitle = ({setProjectTitle, nextStage}) => {
           variant="contained"
           sx={{ mb: 2 }}
           onClick={()=>{
-            setProjectTitle(title)
-            nextStage()
+            fetch("http://localhost:8000/projectExists",{
+              mode: "cors",
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-access-token": getToken(), 
+                "Access-Control-Allow-Origin": "*"
+              },
+              body: JSON.stringify({title})
+            })
+            .then((res)=>{
+              if(res.ok)
+              {
+                return res.text()
+              }
+            })
+            .then((data)=>{
+              if(data == "no")
+              {
+                setProjectTitle(title)
+                nextStage()
+              }
+              else
+              {
+                setErrorMessage("Project name already exists")
+              }
+            })
           }}
         >
           Next
@@ -252,6 +283,7 @@ const MilestoneForm = ({otherMilestones, setToggle, setMilestones, otherRequired
           Cancel
         </Button>
         <Button
+          disabled = {otherMilestones.map(m=>m.name).includes(milestoneName)}
           fullWidth
           variant="contained"
           sx={{ mb: 2 }}
@@ -329,6 +361,7 @@ const SetMilestones = ({setProjectMilestones, setProjectRequiredMilestones, next
 const Preview = ({title, admins, milestones, requiredMilestones, previousStage, creator}) => {
 
   const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState("")
 
   return (
     <Card sx={{width:500}}>
@@ -343,7 +376,7 @@ const Preview = ({title, admins, milestones, requiredMilestones, previousStage, 
             </ListSubheader>
           }>
             {admins.map((val=>(
-              <ListItem key={val._id} divider="true">
+              <ListItem key={val._id} divider={true}>
                 <ListItemText primary={val.username} secondary={"#"+val._id}></ListItemText>
               </ListItem>
             )))}
@@ -354,12 +387,17 @@ const Preview = ({title, admins, milestones, requiredMilestones, previousStage, 
             </ListSubheader>
           }>
             {milestones.map((val=>(
-              <ListItem key={val._id} divider="true">
+              <ListItem key={val._id} divider={true}>
                 <ListItemText primary={val.name} secondary={(requiredMilestones.includes(val))?"Required":"Optional"}></ListItemText>
               </ListItem>
             )))}
           </List>
         </Stack>
+        {
+          (errorMessage)?
+          <Typography variant='subtitle2'>{errorMessage}</Typography>:
+          <></>
+        }
       </CardContent>
       <CardActions>
         <Button
@@ -397,14 +435,18 @@ const Preview = ({title, admins, milestones, requiredMilestones, previousStage, 
             })
             .then((res)=>{
               if(res.ok)
-              {
                 return res.json()
-              }
+              else
+                throw Error(res.statusText)
             })
             .then((data)=>{
               console.log("Created Project")
               console.log(data)
               navigate("/")
+            })
+            .catch((err)=>{
+              console.log(err.message)
+              setErrorMessage(err.message)
             })
 
           }}
