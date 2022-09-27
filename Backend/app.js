@@ -244,7 +244,7 @@ app.post("/milestones", auth, async (req, res)=>{
       await Milestone.findByIdAndDelete(result._id)
       console.log(err.errorArgs[0])
       res.statusMessage = err.errorArgs[0]
-      res.status(500).send(err.errorArgs[0])
+      return res.status(500).send(err.errorArgs[0])
     }
   }
   return res.status(201).send(result);
@@ -297,11 +297,11 @@ app.get("/users/:id", auth, (req, res)=>{
       .then(result=>{
         if(req.user.user_id == id)
         {
-          res.status(200).send(result)
+          return res.status(200).send(result)
         }
         else
         {
-          res.status(200).send({
+          return res.status(200).send({
             firstName: result.firstName,
             lastName: result.lastName,
             achievements: result.milestones
@@ -494,13 +494,13 @@ app.post("/awardMilestone", auth, async (req, res)=>{
 
       // Check that the user to be awarded meets the prerequisites
 
-      const achievedMilestones = user.achievements.map((a)=>a.milestone);
+      const achievedMilestones = usr.achievements.map((a)=>a.milestone);
       for(let prerequisite of milestone.prerequisites)
       {
         if(!achievedMilestones.includes(prerequisite))
         {
           res.statusMessage = "Not all prerequisites have been accomplished"
-          res.status(500).send("Not all prerequisites have been accomplished")
+          return res.status(500).send("Not all prerequisites have been accomplished")
         }
       }
 
@@ -526,7 +526,7 @@ app.post("/awardMilestone", auth, async (req, res)=>{
         }
         catch (err){
           res.statusMessage = err.errorArgs[0]
-          res.status(500).send(err.errorArgs[0])
+          return res.status(500).send(err.errorArgs[0])
         }
       }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemText, TextField, Typography } from '@mui/material'
 import DoneIcon from '@mui/icons-material/Done';
+import ErrorIcon from '@mui/icons-material/Error';
 import MyAppBar from './MyAppBar';
 import { getToken } from '../utilities/LoginService';
 import {isMilestoneAchieved} from "../utilities/ProjectService"
@@ -86,7 +87,7 @@ const SelectMilestone = ({previousStage, nextStage, setMilestoneToAward, project
   )
 }
 
-const SelectUser = ({previousStage, nextStage, setUserToAward})=> {
+const SelectUser = ({nextStage, setUserToAward})=> {
   const {projectId} = useParams()
   const [users, setUsers] = useState([])
   const [errorMessage, setErrorMessage] = useState(null);
@@ -345,20 +346,36 @@ const SetData = ({setAwardData, previousStage, nextStage}) => {
   )
 }
 
-const SuccessScreen = () => {
+const SuccessScreen = ({errorMessage}) => {
 
   const navigate = useNavigate()
+  console.log('Error:', errorMessage);
   
   return (
-    <Card sx={{width:500}}>
-      <CardContent>
-        <Typography component="h1" variant="h5">
-          Milestoned Awarded
-        </Typography>
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-          <DoneIcon></DoneIcon>   
-        </Avatar>
-      </CardContent>
+    <Card sx={{width:500}}> 
+      {
+        (errorMessage)?
+        <CardContent sx={{display: 'flex', flexDirection: 'column',alignItems: 'center'}}>
+          <Typography component="h1" variant="h5">
+            Awarding Error
+          </Typography>
+          <Avatar sx={{ m: 1, bgcolor: 'red' }}>
+            <ErrorIcon></ErrorIcon>   
+          </Avatar>
+          <Typography component="h3" variant="h5"> {errorMessage} </Typography>
+          
+        </CardContent>:
+        <CardContent sx={{display: 'flex', flexDirection: 'column',alignItems: 'center'}} >
+          <Typography component="h1" variant="h5">
+            Milestoned Awarded
+          </Typography>
+          <br></br>
+          <Avatar sx={{ m: 1, bgcolor: 'green' }}>
+            <DoneIcon></DoneIcon>   
+          </Avatar>
+        </CardContent>
+
+      }
       <CardActions>
         <Button
           fullWidth
@@ -393,6 +410,9 @@ const AwardMilestones = () => {
     setStage(stage-1);
   }
 
+  const [errorMessage, setErrorMessage] = useState("")
+  const navigate = useNavigate()
+
   const awardUser = () => {
     console.log("Award")
     console.log(milestoneToAward)
@@ -407,6 +427,23 @@ const AwardMilestones = () => {
         "Access-Control-Allow-Origin": "*"
       },
       body: JSON.stringify({milestoneId:milestoneToAward._id, userId: userToAward._id, data: awardData, support: awardSupport})
+    })
+    .then((res)=>{
+      if(res.ok)
+      {
+        return res.json()
+      }
+      else
+      {
+        throw Error(res.statusText)
+      }
+    })
+    .then((data)=>{console.log(data)})
+    .catch((err)=>{
+      // console.log(err.message)
+      setErrorMessage(err.message)
+      console.log("Error: ", errorMessage)
+      
     })
   }
 
@@ -427,7 +464,46 @@ const AwardMilestones = () => {
     else if(s === 4)
     {
       awardUser()
-      return (<SuccessScreen></SuccessScreen>)
+      return (
+        <Card sx={{width:500}}> 
+          {
+            (errorMessage)?
+            <CardContent sx={{display: 'flex', flexDirection: 'column',alignItems: 'center'}}>
+              <Typography component="h1" variant="h5">
+                Awarding Error
+              </Typography>
+              <Avatar sx={{ m: 1, bgcolor: 'red' }}>
+                <ErrorIcon></ErrorIcon>   
+              </Avatar>
+              <Typography variant="subtitle1"> {errorMessage} </Typography>
+              
+            </CardContent>:
+            <CardContent sx={{display: 'flex', flexDirection: 'column',alignItems: 'center'}} >
+              <Typography component="h1" variant="h5">
+                Milestoned Awarded
+              </Typography>
+              <br></br>
+              <Avatar sx={{ m: 1, bgcolor: 'green' }}>
+                <DoneIcon></DoneIcon>   
+              </Avatar>
+            </CardContent>
+    
+          }
+          <CardActions>
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mb: 2 }}
+              onClick={()=>{
+                navigate("/")
+              }}
+            >
+              Done
+            </Button>
+          </CardActions>
+          
+        </Card>
+      )
     }
   }
 
